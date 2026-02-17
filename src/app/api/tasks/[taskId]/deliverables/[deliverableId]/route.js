@@ -1,3 +1,4 @@
+// Location: src/app/api/tasks/[taskId]/deliverables/[deliverableId]/route.js — PATCH accept/revision/reject
 import { createClient } from "@/lib/supabase-server";
 import db from "@/db/index";
 import { users, tasks, deliverables, agents, creditTransactions } from "@/db/schema";
@@ -39,8 +40,11 @@ export async function PATCH(request, { params }) {
   const body = await request.json();
   const { action, revisionNotes } = body;
 
+  const maxDeliveries = task.maxRevisions + 1;
+  const revisionsExhausted = deliverable.revisionNumber >= maxDeliveries;
+
   // ═══════════════════════════════════════════════════════════════════
-  // 5a: ACCEPT
+  // 5a: ACCEPT — always allowed on submitted deliverable
   // ═══════════════════════════════════════════════════════════════════
   if (action === "accept") {
     // 1. Deliverable → accepted
@@ -49,26 +53,25 @@ export async function PATCH(request, { params }) {
     // 2. Task → completed
     await db.update(tasks).set({ status: "completed", updatedAt: new Date() }).where(eq(tasks.id, task.id));
 
-    // 3. Credit flow
+    // 3. Credit flow — credits are minted, not deducted from poster
     const agent = await db.select().from(agents).where(eq(agents.id, task.claimedByAgentId)).then((r) => r[0]);
 
     if (agent) {
       const fee = Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100);
       const payment = task.budgetCredits - fee;
 
-      // Get operator
       const operator = await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]);
 
       if (operator) {
-        const newBalance = operator.creditBalance + payment;
+        // Ensure balance never goes negative (it shouldn't since we only add)
+        const newBalance = Math.max(0, operator.creditBalance + payment);
 
-        // Update operator balance
         await db
           .update(users)
           .set({ creditBalance: newBalance, updatedAt: new Date() })
           .where(eq(users.id, operator.id));
 
-        // 4. Log payment transaction
+        // Log payment
         await db.insert(creditTransactions).values({
           userId: operator.id,
           amount: payment,
@@ -79,24 +82,21 @@ export async function PATCH(request, { params }) {
           balanceAfter: newBalance,
         });
 
-        // Log platform fee (for tracking — not deducted from anyone)
+        // Log platform fee (tracking only)
         await db.insert(creditTransactions).values({
           userId: operator.id,
           amount: -fee,
           type: "platform_fee",
           taskId: task.id,
           description: `Platform fee (${PLATFORM.PLATFORM_FEE_PERCENT}%) for task: ${task.title}`,
-          balanceAfter: newBalance, // fee is already excluded from payment
+          balanceAfter: newBalance,
         });
       }
 
-      // 5. Increment agent's tasks_completed
+      // Increment tasks_completed
       await db
         .update(agents)
-        .set({
-          tasksCompleted: sql`${agents.tasksCompleted} + 1`,
-          updatedAt: new Date(),
-        })
+        .set({ tasksCompleted: sql`${agents.tasksCompleted} + 1`, updatedAt: new Date() })
         .where(eq(agents.id, agent.id));
     }
 
@@ -104,11 +104,10 @@ export async function PATCH(request, { params }) {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // 5b: REQUEST REVISION
+  // 5b: REQUEST REVISION — only if revisions NOT exhausted
   // ═══════════════════════════════════════════════════════════════════
   if (action === "revision") {
-    // Precondition: revision_number < max_revisions + 1
-    if (deliverable.revisionNumber >= task.maxRevisions + 1) {
+    if (revisionsExhausted) {
       return NextResponse.json(
         { error: "Max revisions exhausted. You can only accept or reject." },
         { status: 400 }
@@ -122,13 +121,11 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // 1. Deliverable → revision_requested
     await db
       .update(deliverables)
       .set({ status: "revision_requested", revisionNotes: revisionNotes.trim() })
       .where(eq(deliverables.id, dId));
 
-    // 2. Task → in_progress
     await db
       .update(tasks)
       .set({ status: "in_progress", updatedAt: new Date() })
@@ -141,17 +138,14 @@ export async function PATCH(request, { params }) {
   // 5c: REJECT (FINAL) — only if max revisions exhausted
   // ═══════════════════════════════════════════════════════════════════
   if (action === "reject") {
-    if (deliverable.revisionNumber < task.maxRevisions + 1) {
+    if (!revisionsExhausted) {
       return NextResponse.json(
         { error: "Cannot reject until max revisions are exhausted. Request a revision instead." },
         { status: 400 }
       );
     }
 
-    // 1. Deliverable → rejected
     await db.update(deliverables).set({ status: "rejected" }).where(eq(deliverables.id, dId));
-
-    // 2. Task → disputed
     await db
       .update(tasks)
       .set({ status: "disputed", updatedAt: new Date() })

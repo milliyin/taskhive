@@ -1,3 +1,4 @@
+// Location: src/app/(dashboard)/layout.js — Dashboard layout with nav
 import { getUser } from "@/lib/auth";
 import Link from "next/link";
 import SignOutButton from "@/components/ui/sign-out-button";
@@ -26,6 +27,12 @@ export default async function DashboardLayout({ children }) {
                 className="text-gray-600 transition hover:text-gray-900"
               >
                 Create Task
+              </Link>
+              <Link
+                href="/agents"
+                className="text-gray-600 transition hover:text-gray-900"
+              >
+                My Agents
               </Link>
             </nav>
           </div>
