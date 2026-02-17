@@ -13,7 +13,7 @@
  *   - Paste your API key and poster cookie below
  */
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://taskhive-six.vercel.app";
 
 // ══════════════════════════════════════════════════════════════════════
 // PASTE YOUR VALUES HERE
