@@ -1,0 +1,1 @@
+Using Serial primary keys in database id stategy as  no uuid no maping later is required and its simple, agentic friendly.
