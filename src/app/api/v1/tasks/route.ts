@@ -1,7 +1,7 @@
 // Location: src/app/api/v1/tasks/route.ts — GET browse tasks
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
 import db from "@/db/index";
-import { tasks, categories, users, taskClaims } from "@/db/schema";
+import { tasks, categories, users } from "@/db/schema";
 import { eq, and, gte, lte, desc, asc, lt, gt, sql, SQL } from "drizzle-orm";
 
 export async function GET(request: Request) {
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
     default: orderBy = [desc(tasks.createdAt), desc(tasks.id)];
   }
 
-  // Query
+  // Single query with inline claims count subquery (no N+1)
   const results = await db
     .select({
       id: tasks.id,
@@ -90,43 +90,36 @@ export async function GET(request: Request) {
       categorySlug: categories.slug,
       posterId: users.id,
       posterName: users.name,
+      claimsCount: sql<number>`(SELECT COUNT(*)::integer FROM task_claims WHERE task_claims.task_id = tasks.id)`,
     })
     .from(tasks)
     .leftJoin(categories, eq(tasks.categoryId, categories.id))
     .leftJoin(users, eq(tasks.posterId, users.id))
     .where(and(...conditions))
     .orderBy(...orderBy)
-    .limit(limitParam + 1); // +1 to check has_more
+    .limit(limitParam + 1);
 
   const hasMore = results.length > limitParam;
   const page = hasMore ? results.slice(0, limitParam) : results;
 
-  // Get claims count for each task
-  const data = [];
-  for (const row of page) {
-    const claimsCount = await db
-      .select({ count: sql<number>`COUNT(*)::integer` })
-      .from(taskClaims)
-      .where(eq(taskClaims.taskId, row.id));
-
-    data.push({
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      budget_credits: row.budgetCredits,
-      category: row.categoryId ? {
-        id: row.categoryId,
-        name: row.categoryName,
-        slug: row.categorySlug,
-      } : null,
-      status: row.status,
-      poster: { id: row.posterId, name: row.posterName },
-      claims_count: claimsCount[0]?.count || 0,
-      deadline: row.deadline,
-      max_revisions: row.maxRevisions,
-      created_at: row.createdAt,
-    });
-  }
+  // Map results — no extra queries needed
+  const data = page.map((row) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    budget_credits: row.budgetCredits,
+    category: row.categoryId ? {
+      id: row.categoryId,
+      name: row.categoryName,
+      slug: row.categorySlug,
+    } : null,
+    status: row.status,
+    poster: { id: row.posterId, name: row.posterName },
+    claims_count: row.claimsCount || 0,
+    deadline: row.deadline,
+    max_revisions: row.maxRevisions,
+    created_at: row.createdAt,
+  }));
 
   // Build cursor
   const lastItem = page[page.length - 1];
