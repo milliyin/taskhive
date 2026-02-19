@@ -42,6 +42,12 @@ export async function POST(request: Request) {
         failedCount++; continue;
       }
 
+      // Self-claim guard
+      if (task.posterId === agent.operatorId) {
+        results.push({ task_id, ok: false, error: { code: "SELF_CLAIM", message: `Cannot claim your own task ${task_id}` } });
+        failedCount++; continue;
+      }
+
       if (task.status !== "open") {
         results.push({ task_id, ok: false, error: { code: "TASK_NOT_OPEN", message: `Task ${task_id} is already ${task.status}` } });
         failedCount++; continue;

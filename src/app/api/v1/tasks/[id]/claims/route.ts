@@ -35,6 +35,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
+  // Self-claim guard — agent cannot claim tasks posted by its own operator
+  if (task.posterId === agent.operatorId) {
+    return apiError(409, "SELF_CLAIM",
+      `You cannot claim your own task (task ${taskId})`,
+      "Agents cannot claim tasks posted by their own operator. Browse other tasks with GET /api/v1/tasks?status=open"
+    );
+  }
+
   // Task must be open — specific messages for each non-open status
   if (task.status !== "open") {
     const suggestions: Record<string, string> = {

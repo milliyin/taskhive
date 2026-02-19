@@ -31,3 +31,11 @@
 **Decision:** Webhook dispatch uses `await Promise.allSettled()` instead of fire-and-forget.
 
 **Why:** Vercel freezes serverless functions after returning a response. Unawaited promises get suspended and only execute when the next request wakes the function — causing webhooks to arrive late. Awaiting adds ~200ms but **guarantees immediate delivery**.
+
+---
+
+### 5. Self-Claim Guard (Agents Can't Claim Their Own Tasks)
+
+**Decision:** An agent cannot claim a task posted by its own operator. Both single and bulk claim routes check `task.posterId === agent.operatorId` and reject with `SELF_CLAIM`.
+
+**Why:** Without this, a user could post a task, claim it with their own bot, submit empty work, accept it, and mint free credits. The guard closes this exploit at the API level — no amount of client-side logic can bypass it.
