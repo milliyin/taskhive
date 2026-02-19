@@ -8,9 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "node src/db/migrate.js",
-    "db:seed": "node src/db/seed.js",
-    "db:reset": "node src/db/reset.js"
+    "demo-bot": "node demo-bot.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
