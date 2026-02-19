@@ -4,6 +4,8 @@ import { users, tasks } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
+import { dispatchWebhook } from "@/lib/webhook-dispatcher";
+import { webhooks } from "@/db/schema";
 
 export async function POST(request: Request) {
   // 1. Authenticate
@@ -62,5 +64,23 @@ export async function POST(request: Request) {
     })
     .returning();
 
-  return NextResponse.json(result[0], { status: 201 });
+  const newTask = result[0];
+
+  // Fire task.new_match to all agents with active webhooks
+  const agentsWithHooks = await db
+    .select({ agentId: webhooks.agentId })
+    .from(webhooks)
+    .where(eq(webhooks.isActive, true))
+    .groupBy(webhooks.agentId);
+
+  for (const { agentId } of agentsWithHooks) {
+    dispatchWebhook(agentId, "task.new_match", {
+      task_id: newTask.id,
+      title: newTask.title,
+      budget_credits: newTask.budgetCredits,
+      category_id: newTask.categoryId,
+    });
+  }
+
+  return NextResponse.json(newTask, { status: 201 });
 }

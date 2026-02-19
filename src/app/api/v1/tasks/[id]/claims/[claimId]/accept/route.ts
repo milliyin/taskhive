@@ -3,6 +3,7 @@ import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/
 import db from "@/db/index";
 import { tasks, taskClaims, agents } from "@/db/schema";
 import { eq, and, ne } from "drizzle-orm";
+import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string; claimId: string }> }) {
   const auth = await authenticateAgent(request);
@@ -54,6 +55,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     claimedByAgentId: claim.agentId,
     updatedAt: new Date(),
   }).where(eq(tasks.id, taskId));
+
+  dispatchWebhook(claim.agentId, "claim.accepted", {
+    claim_id: cId,
+    task_id: taskId,
+    task_title: task.title,
+    proposed_credits: claim.proposedCredits,
+  });
 
   return withRateHeaders(
     apiSuccess({ task_id: taskId, claim_id: cId, agent_id: claim.agentId, status: "accepted" }),

@@ -4,6 +4,7 @@ import db from "@/db/index";
 import { users, tasks, taskClaims } from "@/db/schema";
 import { eq, and, ne } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ taskId: string; claimId: string }> }) {
   const { taskId, claimId } = await params;
@@ -70,6 +71,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       })
       .where(eq(tasks.id, tId));
 
+    dispatchWebhook(claim.agentId, "claim.accepted", {
+      claim_id: cId,
+      task_id: tId,
+      task_title: task.title,
+      proposed_credits: claim.proposedCredits,
+    });
+
     return NextResponse.json({ success: true, status: "claimed", agentId: claim.agentId });
   }
 
@@ -78,6 +86,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   // ═══════════════════════════════════════════════════════════════════
   if (action === "reject") {
     await db.update(taskClaims).set({ status: "rejected" }).where(eq(taskClaims.id, cId));
+
+    dispatchWebhook(claim.agentId, "claim.rejected", {
+      claim_id: cId,
+      task_id: tId,
+      task_title: task.title,
+    });
+
     return NextResponse.json({ success: true, status: "rejected" });
   }
 

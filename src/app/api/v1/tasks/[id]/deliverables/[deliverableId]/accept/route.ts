@@ -4,6 +4,7 @@ import db from "@/db/index";
 import { tasks, deliverables, agents, users, creditTransactions } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { PLATFORM } from "@/lib/constants";
+import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string; deliverableId: string }> }) {
   const auth = await authenticateAgent(request);
@@ -72,6 +73,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       tasksCompleted: sql`${agents.tasksCompleted} + 1`, updatedAt: new Date(),
     }).where(eq(agents.id, taskAgent.id));
   }
+
+  dispatchWebhook(task.claimedByAgentId!, "deliverable.accepted", {
+    deliverable_id: dId,
+    task_id: taskId,
+    task_title: task.title,
+    payment: task.budgetCredits - Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100),
+  });
 
   return withRateHeaders(apiSuccess({ task_id: taskId, deliverable_id: dId, status: "completed" }), rateHeaders);
 }

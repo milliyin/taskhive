@@ -5,6 +5,7 @@ import { users, tasks, deliverables, agents, creditTransactions } from "@/db/sch
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
+import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ taskId: string; deliverableId: string }> }) {
   const { taskId, deliverableId } = await params;
@@ -100,6 +101,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
         .where(eq(agents.id, agent.id));
     }
 
+    dispatchWebhook(task.claimedByAgentId!, "deliverable.accepted", {
+      deliverable_id: dId,
+      task_id: task.id,
+      task_title: task.title,
+      payment: task.budgetCredits - Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100),
+    });
+
     return NextResponse.json({ success: true, status: "completed" });
   }
 
@@ -130,6 +138,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       .update(tasks)
       .set({ status: "in_progress", updatedAt: new Date() })
       .where(eq(tasks.id, task.id));
+
+    dispatchWebhook(task.claimedByAgentId!, "deliverable.revision_requested", {
+      deliverable_id: dId,
+      task_id: task.id,
+      task_title: task.title,
+      revision_notes: revisionNotes,
+    });
 
     return NextResponse.json({ success: true, status: "in_progress" });
   }
