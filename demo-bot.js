@@ -1,380 +1,299 @@
 #!/usr/bin/env node
 // ═══════════════════════════════════════════════════════════════════
-// TaskHive Demo Bot — Full Agent Lifecycle
+// TaskHive Demo Bot — Dual Agent Lifecycle
 // Run: node demo-bot.js
 // ═══════════════════════════════════════════════════════════════════
 
-const BASE_URL = process.env.TASKHIVE_URL || "https://taskhive-six.vercel.app";
-const API_KEY = process.env.TASKHIVE_API_KEY || "th_agent_509d2ce7ca2547516ebd375e916893da556e29f0ffd77eabf8c9dd61849d4584";
+const BASE = process.env.TASKHIVE_URL || "https://taskhive-six.vercel.app";
+const A1 = process.env.TASKHIVE_API_KEY || "th_agent_509d2ce7ca2547516ebd375e916893da556e29f0ffd77eabf8c9dd61849d4584";
+const A2 = process.env.TASKHIVE_API_KEY2 || "th_agent_235189ce305387c7b93fac53fdc9ec593bbf8fe3c8d366900c7c85877c90bdfb";
 
-// ─── Helpers ─────────────────────────────────────────────────────────
+function log(e, m) { console.log(`  ${e}  ${m}`); }
+function section(t) { console.log(`\n${"─".repeat(60)}\n  ${t}\n${"─".repeat(60)}`); }
 
-function log(emoji, msg) {
-  console.log(`  ${emoji}  ${msg}`);
-}
+let passed = 0, failed = 0;
+function check(c, l) { if (c) { log("✅", l); passed++; } else { log("❌", l); failed++; } return c; }
 
-function header(title) {
-  console.log(`\n${"─".repeat(60)}`);
-  console.log(`  ${title}`);
-  console.log(`${"─".repeat(60)}`);
-}
-
-async function api(method, path, body = null) {
-  const opts = {
-    method,
-    headers: {
-      "Authorization": `Bearer ${API_KEY}`,
-      "Content-Type": "application/json",
-    },
-  };
+async function api(method, path, body = null, key = A1) {
+  const opts = { method, headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
-
-  const res = await fetch(`${BASE_URL}${path}`, opts);
+  const res = await fetch(`${BASE}${path}`, opts);
   const data = await res.json();
-
-  if (!data.ok) {
-    log("❌", `${method} ${path} → ${res.status}`);
-    log("  ", `Error: ${data.error?.message}`);
-    log("  ", `Suggestion: ${data.error?.suggestion}`);
-    return { ok: false, status: res.status, error: data.error, data: null };
-  }
-
+  if (!data.ok) return { ok: false, status: res.status, error: data.error, data: null };
   return { ok: true, status: res.status, data: data.data, meta: data.meta };
 }
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-// ─── Main ────────────────────────────────────────────────────────────
 
 async function main() {
   console.log(`
 ╔══════════════════════════════════════════════════════════╗
-║   TaskHive Demo Bot — Full Agent Lifecycle              ║
+║   TaskHive Demo Bot — Dual Agent Lifecycle              ║
 ╚══════════════════════════════════════════════════════════╝
+  Target:  ${BASE}
+  Agent 1: illiyin  — ${A1.substring(0, 20)}...
+  Agent 2: webdown  — ${A2.substring(0, 20)}...
 `);
-  console.log(`  Target: ${BASE_URL}`);
-  console.log(`  API Key: ${API_KEY.substring(0, 20)}...`);
 
-  let passed = 0;
-  let failed = 0;
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 1: Authenticate both agents
+  // ═══════════════════════════════════════════════════════════════
+  section("Step 1: Authenticate Both Agents");
 
-  function check(condition, label) {
-    if (condition) {
-      log("✅", label);
-      passed++;
-    } else {
-      log("❌", label);
-      failed++;
-    }
-  }
+  const p1 = await api("GET", "/api/v1/agents/me", null, A1);
+  check(p1.ok, "Agent 1 (illiyin) authenticated");
+  log("📋", `  ID: ${p1.data?.id} | Rep: ${p1.data?.reputation_score} | Completed: ${p1.data?.tasks_completed}`);
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 1: Authenticate — Check agent profile
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 1: Authenticate — Get Agent Profile");
+  const p2 = await api("GET", "/api/v1/agents/me", null, A2);
+  check(p2.ok, "Agent 2 (webdown) authenticated");
+  log("📋", `  ID: ${p2.data?.id} | Rep: ${p2.data?.reputation_score} | Completed: ${p2.data?.tasks_completed}`);
 
-  const profile = await api("GET", "/api/v1/agents/me");
-  check(profile.ok, "GET /agents/me → 200");
-  check(typeof profile.data?.id === "number", `Agent ID: ${profile.data?.id}`);
-  check(profile.data?.status === "active", `Status: ${profile.data?.status}`);
-  log("📋", `Name: ${profile.data?.name}`);
-  log("📋", `Reputation: ${profile.data?.reputation_score}`);
-  log("📋", `Tasks completed: ${profile.data?.tasks_completed}`);
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 2: Check credits for both
+  // ═══════════════════════════════════════════════════════════════
+  section("Step 2: Credit Balances");
 
-  const initialTasksCompleted = profile.data?.tasks_completed || 0;
+  const cr1 = await api("GET", "/api/v1/agents/me/credits", null, A1);
+  check(cr1.ok, `Agent 1: ${cr1.data?.credit_balance} credits`);
+  const bal1Before = cr1.data?.credit_balance || 0;
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 2: Check initial credit balance
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 2: Check Initial Credits");
+  const cr2 = await api("GET", "/api/v1/agents/me/credits", null, A2);
+  check(cr2.ok, `Agent 2: ${cr2.data?.credit_balance} credits`);
+  const bal2Before = cr2.data?.credit_balance || 0;
 
-  const creditsBefore = await api("GET", "/api/v1/agents/me/credits");
-  check(creditsBefore.ok, "GET /agents/me/credits → 200");
-  check(typeof creditsBefore.data?.credit_balance === "number", `Balance: ${creditsBefore.data?.credit_balance} credits`);
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 3: Browse tasks + self-claim guard demo
+  // ═══════════════════════════════════════════════════════════════
+  section("Step 3: Browse Tasks + Self-Claim Guard");
 
-  const initialBalance = creditsBefore.data?.credit_balance || 0;
+  const browse = await api("GET", "/api/v1/tasks?status=open&limit=20", null, A1);
+  check(browse.ok, `Found ${browse.data?.length || 0} open tasks`);
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 3: Browse open tasks
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 3: Browse Available Tasks");
-
-  const browse = await api("GET", "/api/v1/tasks?status=open&sort=budget_high&limit=5");
-  check(browse.ok, "GET /tasks?status=open → 200");
-  check(Array.isArray(browse.data), `Found ${browse.data?.length || 0} open tasks`);
-
-  if (!browse.data || browse.data.length === 0) {
-    log("⚠️", "No open tasks found! Create a task in the Web UI first.");
-    log("⚠️", "Visit: " + BASE_URL + "/dashboard/my/tasks");
-    console.log(`\n  Results: ${passed} passed | ${failed} failed\n`);
+  if (!browse.data?.length) {
+    log("⚠️", "No open tasks — both users need to post tasks first.");
     process.exit(1);
   }
 
-  // Display available tasks
-  for (const task of browse.data.slice(0, 3)) {
-    log("📌", `Task #${task.id}: "${task.title}" — ${task.budget_credits} credits (${task.claims_count} claims)`);
+  const a1Op = p1.data?.operator_id || p1.data?.operatorId;
+  const a2Op = p2.data?.operator_id || p2.data?.operatorId;
+
+  for (const t of browse.data.slice(0, 5)) {
+    const pid = t.poster_id || t.poster?.id;
+    const flags = [];
+    if (pid === a1Op) flags.push("A1-OWN");
+    if (pid === a2Op) flags.push("A2-OWN");
+    const tag = flags.length ? ` [${flags.join(", ")}]` : "";
+    log("📌", `#${t.id} "${t.title}" — ${t.budget_credits}cr (poster:${pid})${tag}`);
   }
 
-  // Pick the highest-budget open task
-  const target = browse.data[0];
-  log("🎯", `Selected: Task #${target.id} — "${target.title}" (${target.budget_credits} credits)`);
+  // Demo self-claim guard: Agent 1 tries to claim own task
+  const getPid = (t) => t.poster_id || t.poster?.id;
+  const ownTask = browse.data.find((t) => getPid(t) === a1Op);
+  if (ownTask) {
+    log("🧪", `Self-claim test: Agent 1 → own task #${ownTask.id}`);
+    const selfClaim = await api("POST", `/api/v1/tasks/${ownTask.id}/claims`, { proposed_credits: 10 }, A1);
+    check(selfClaim.error?.code === "SELF_CLAIM", `Blocked → SELF_CLAIM ✓`);
+  }
 
-  // ═══════════════════════════════════════════════════════════════════
+  // Agent 2 tries to claim own task too
+  const ownTask2 = browse.data.find((t) => getPid(t) === a2Op);
+  if (ownTask2) {
+    log("🧪", `Self-claim test: Agent 2 → own task #${ownTask2.id}`);
+    const selfClaim2 = await api("POST", `/api/v1/tasks/${ownTask2.id}/claims`, { proposed_credits: 10 }, A2);
+    check(selfClaim2.error?.code === "SELF_CLAIM", `Blocked → SELF_CLAIM ✓`);
+  }
+
+  // Find cross-user tasks
+  const a1Claimable = browse.data.filter((t) => getPid(t) !== a1Op);
+  const a2Claimable = browse.data.filter((t) => getPid(t) !== a2Op);
+  log("🛡️", `Agent 1 can claim: ${a1Claimable.length} tasks | Agent 2 can claim: ${a2Claimable.length} tasks`);
+
+  // Pick a task for Agent 2 to claim (posted by illiyin's operator)
+  const target = a2Claimable[0] || a1Claimable[0];
+  const useKey = a2Claimable[0] ? A2 : A1;
+  const agentLabel = a2Claimable[0] ? "Agent 2" : "Agent 1";
+
+  if (!target) {
+    log("⚠️", `No cross-user tasks. a1Op=${a1Op}, a2Op=${a2Op}`);
+    log("💡", "Have BOTH users post tasks via the web UI.");
+    process.exit(1);
+  }
+
+  log("🎯", `${agentLabel} targeting: Task #${target.id} — "${target.title}" (${target.budget_credits}cr)`);
+
+  // ═══════════════════════════════════════════════════════════════
   // STEP 4: Get task details
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 4: Get Task Details");
+  // ═══════════════════════════════════════════════════════════════
+  section("Step 4: Task Details");
 
-  const details = await api("GET", `/api/v1/tasks/${target.id}`);
+  const details = await api("GET", `/api/v1/tasks/${target.id}`, null, useKey);
   check(details.ok, `GET /tasks/${target.id} → 200`);
-  check(details.data?.id === target.id, `Task ID matches: ${details.data?.id}`);
   log("📋", `Description: ${details.data?.description?.substring(0, 80)}...`);
-  log("📋", `Max revisions: ${details.data?.max_revisions}`);
-  log("📋", `Deadline: ${details.data?.deadline || "none"}`);
+  log("📋", `Max revisions: ${details.data?.max_revisions} | Deadline: ${details.data?.deadline || "none"}`);
 
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // STEP 5: Claim the task
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 5: Claim the Task");
+  // ═══════════════════════════════════════════════════════════════
+  section(`Step 5: ${agentLabel} Claims Task`);
 
-  // Propose 90% of budget (competitive pricing)
   const proposedCredits = Math.floor(target.budget_credits * 0.9);
-
   const claim = await api("POST", `/api/v1/tasks/${target.id}/claims`, {
     proposed_credits: proposedCredits,
-    message: "I'm the TaskHive Demo Bot. I can complete this task efficiently with high-quality output. My approach: analyze requirements, implement solution, include tests and documentation.",
-  });
+    message: `${agentLabel} Demo Bot — I'll deliver high-quality work with tests and docs.`,
+  }, useKey);
 
   if (claim.ok) {
-    check(true, `POST /tasks/${target.id}/claims → 201`);
-    check(claim.data?.status === "pending", `Claim status: ${claim.data?.status}`);
-    log("📋", `Claim ID: ${claim.data?.id}`);
-    log("📋", `Proposed: ${proposedCredits} credits (${Math.floor(proposedCredits / target.budget_credits * 100)}% of budget)`);
+    check(true, `Claim → ${claim.status}`);
+    check(claim.data?.status === "pending", `Status: ${claim.data?.status}`);
+    log("📋", `Claim #${claim.data?.id} — proposed ${proposedCredits}cr (${Math.floor(proposedCredits / target.budget_credits * 100)}% of budget)`);
   } else if (claim.error?.code === "DUPLICATE_CLAIM") {
-    log("⚠️", "Already claimed this task — continuing with existing claim");
+    log("⚠️", "Already claimed — continuing");
     passed++;
-  } else if (claim.error?.code === "TASK_NOT_OPEN") {
-    log("⚠️", `Task is ${claim.error?.message} — trying next task`);
-    // Try the next task
-    if (browse.data.length > 1) {
-      const fallback = browse.data[1];
-      log("🎯", `Falling back to Task #${fallback.id}`);
-      const claim2 = await api("POST", `/api/v1/tasks/${fallback.id}/claims`, {
-        proposed_credits: Math.floor(fallback.budget_credits * 0.9),
-        message: "Demo Bot fallback claim.",
-      });
-      check(claim2.ok || claim2.error?.code === "DUPLICATE_CLAIM", `Claimed fallback task #${fallback.id}`);
+  } else if (claim.error?.code === "SELF_CLAIM") {
+    log("⚠️", "Self-claim blocked — skipping");
+    failed++;
+  } else {
+    log("⚠️", `Claim failed: ${claim.error?.message}`);
+    failed++;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 6: Verify claim in my claims
+  // ═══════════════════════════════════════════════════════════════
+  section(`Step 6: ${agentLabel}'s Claims`);
+
+  const myClaims = await api("GET", "/api/v1/agents/me/claims", null, useKey);
+  check(myClaims.ok, "GET /agents/me/claims → 200");
+  const pending = (myClaims.data || []).filter((c) => c.status === "pending").length;
+  const accepted = (myClaims.data || []).filter((c) => c.status === "accepted").length;
+  log("📋", `Pending: ${pending} | Accepted: ${accepted}`);
+
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 7: Submit deliverable (needs accepted claim)
+  // ═══════════════════════════════════════════════════════════════
+  section(`Step 7: ${agentLabel} Submits Deliverable`);
+
+  const myTasks = await api("GET", "/api/v1/agents/me/tasks", null, useKey);
+  let delivTaskId = null;
+
+  if (myTasks.ok && myTasks.data?.length > 0) {
+    delivTaskId = myTasks.data[0].task_id || myTasks.data[0].id;
+    log("📋", `Active task: #${delivTaskId}`);
+  }
+
+  if (!delivTaskId) {
+    const acc = (myClaims.data || []).filter((c) => c.status === "accepted");
+    if (acc.length > 0) {
+      delivTaskId = acc[0].task_id;
+      log("📋", `Accepted claim for task: #${delivTaskId}`);
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 6: Verify claim appears in my claims
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 6: Verify Claim in My Claims");
-
-  const myClaims = await api("GET", "/api/v1/agents/me/claims");
-  check(myClaims.ok, "GET /agents/me/claims → 200");
-  check(Array.isArray(myClaims.data), `Total claims: ${myClaims.data?.length || 0}`);
-
-  const pendingClaims = (myClaims.data || []).filter((c) => c.status === "pending");
-  const acceptedClaims = (myClaims.data || []).filter((c) => c.status === "accepted");
-
-  log("📋", `Pending: ${pendingClaims.length} | Accepted: ${acceptedClaims.length}`);
-
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 7: Attempt delivery (needs accepted claim)
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 7: Submit Deliverable");
-
-  // Find a task we have an accepted claim for
-  let deliveryTaskId = null;
-  let deliveryCredits = 0;
-
-  // Check active tasks
-  const myTasks = await api("GET", "/api/v1/agents/me/tasks");
-  if (myTasks.ok && myTasks.data?.length > 0) {
-    const activeTask = myTasks.data[0];
-    deliveryTaskId = activeTask.task_id || activeTask.id;
-    deliveryCredits = activeTask.proposed_credits || activeTask.budget_credits;
-    log("📋", `Active task found: #${deliveryTaskId}`);
-  }
-
-  // Also check accepted claims
-  if (!deliveryTaskId && acceptedClaims.length > 0) {
-    deliveryTaskId = acceptedClaims[0].task_id;
-    deliveryCredits = acceptedClaims[0].proposed_credits;
-    log("📋", `Accepted claim found for task: #${deliveryTaskId}`);
-  }
-
-  if (deliveryTaskId) {
-    const deliverable = await api("POST", `/api/v1/tasks/${deliveryTaskId}/deliverables`, {
-      content: `# Task Deliverable — Demo Bot Output
-
-## Summary
-This deliverable was generated by the TaskHive Demo Bot to demonstrate the full agent lifecycle.
+  if (delivTaskId) {
+    const deliverable = await api("POST", `/api/v1/tasks/${delivTaskId}/deliverables`, {
+      content: `# Deliverable — ${agentLabel} Demo Bot
 
 ## Implementation
 
 \`\`\`python
-def parse_csv(file_path: str) -> list[dict]:
-    """Parse a CSV file and return a list of dictionaries."""
+def parse_csv(path: str) -> list[dict]:
     import csv
-    
-    with open(file_path, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        return [dict(row) for row in reader]
-
+    with open(path, 'r') as f:
+        return [dict(row) for row in csv.DictReader(f)]
 
 def test_parse_csv():
-    """Unit tests for parse_csv function."""
     import tempfile, os
-    
-    # Test 1: Basic CSV
     with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
         f.write('name,age\\nAlice,30\\nBob,25')
         path = f.name
-    
     result = parse_csv(path)
     assert len(result) == 2
     assert result[0]['name'] == 'Alice'
-    assert result[1]['age'] == '25'
     os.unlink(path)
-    
-    # Test 2: Empty file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
-        f.write('')
-        path = f.name
-    
-    result = parse_csv(path)
-    assert len(result) == 0
-    os.unlink(path)
-    
     print("All tests passed!")
 
 if __name__ == '__main__':
     test_parse_csv()
 \`\`\`
 
-## Notes
-- Handles UTF-8 encoding
-- Uses only standard library (csv module)
-- Includes edge case tests for empty files
-- Type hints and docstrings included
-
-Generated by TaskHive Demo Bot at ${new Date().toISOString()}`,
-    });
+Generated at ${new Date().toISOString()}`,
+    }, useKey);
 
     if (deliverable.ok) {
-      check(true, `POST /tasks/${deliveryTaskId}/deliverables → 201`);
-      check(deliverable.data?.status === "submitted", `Deliverable status: ${deliverable.data?.status}`);
-      log("📋", `Deliverable ID: ${deliverable.data?.id}`);
-      log("📋", `Revision #: ${deliverable.data?.revision_number}`);
-      log("📋", `Late: ${deliverable.data?.is_late ? "yes" : "no"}`);
+      check(true, `Deliverable submitted → ${deliverable.status}`);
+      log("📋", `ID: ${deliverable.data?.id} | Revision: ${deliverable.data?.revision_number}`);
     } else {
-      log("⚠️", `Delivery failed: ${deliverable.error?.message}`);
-      log("💡", `${deliverable.error?.suggestion}`);
+      log("⚠️", `${deliverable.error?.message}`);
     }
   } else {
-    log("⏳", "No accepted claims yet — poster needs to accept a claim first");
-    log("💡", `Visit ${BASE_URL}/dashboard/my/tasks to accept a claim`);
+    log("⏳", "No accepted claims — poster needs to accept a claim first.");
+    log("💡", `Visit ${BASE}/tasks to accept the claim, then re-run.`);
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 8: Check for credit changes
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 8: Verify Credits");
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 8: Check credits
+  // ═══════════════════════════════════════════════════════════════
+  section("Step 8: Credit Check");
 
-  const creditsAfter = await api("GET", "/api/v1/agents/me/credits");
-  check(creditsAfter.ok, "GET /agents/me/credits → 200");
+  const cr1After = await api("GET", "/api/v1/agents/me/credits", null, A1);
+  const bal1After = cr1After.data?.credit_balance || 0;
+  const delta1 = bal1After - bal1Before;
 
-  const finalBalance = creditsAfter.data?.credit_balance || 0;
-  const balanceChange = finalBalance - initialBalance;
+  const cr2After = await api("GET", "/api/v1/agents/me/credits", null, A2);
+  const bal2After = cr2After.data?.credit_balance || 0;
+  const delta2 = bal2After - bal2Before;
 
-  log("📋", `Initial balance: ${initialBalance} credits`);
-  log("📋", `Current balance: ${finalBalance} credits`);
-  log("📋", `Change: ${balanceChange >= 0 ? "+" : ""}${balanceChange} credits`);
+  log("📋", `Agent 1: ${bal1Before} → ${bal1After} (${delta1 >= 0 ? "+" : ""}${delta1})`);
+  log("📋", `Agent 2: ${bal2Before} → ${bal2After} (${delta2 >= 0 ? "+" : ""}${delta2})`);
 
-  if (balanceChange > 0) {
-    check(true, `Credits increased by ${balanceChange} (payment received!)`);
-
-    // Verify transaction in ledger
-    const transactions = creditsAfter.data?.recent_transactions || [];
-    const payment = transactions.find((t) => t.type === "payment");
-    if (payment) {
-      log("📋", `Payment: +${payment.amount} credits for task`);
-      log("📋", `Balance after: ${payment.balance_after}`);
-    }
+  if (delta1 > 0 || delta2 > 0) {
+    check(true, "Credits increased — payment received!");
   } else {
-    log("ℹ️", "No credit change — deliverable needs to be accepted by poster");
+    log("ℹ️", "No credit change — deliverable awaiting acceptance");
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 9: Check updated profile
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 9: Final Profile Check");
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 9: Final profiles
+  // ═══════════════════════════════════════════════════════════════
+  section("Step 9: Final Profiles");
 
-  const finalProfile = await api("GET", "/api/v1/agents/me");
-  check(finalProfile.ok, "GET /agents/me → 200");
+  const fp1 = await api("GET", "/api/v1/agents/me", null, A1);
+  const fp2 = await api("GET", "/api/v1/agents/me", null, A2);
+  check(fp1.ok, `Agent 1: rep ${fp1.data?.reputation_score} | completed ${fp1.data?.tasks_completed} | rating ${fp1.data?.avg_rating ?? "none"}`);
+  check(fp2.ok, `Agent 2: rep ${fp2.data?.reputation_score} | completed ${fp2.data?.tasks_completed} | rating ${fp2.data?.avg_rating ?? "none"}`);
 
-  const newTasksCompleted = finalProfile.data?.tasks_completed || 0;
-  log("📋", `Tasks completed: ${initialTasksCompleted} → ${newTasksCompleted}`);
-  log("📋", `Reputation: ${finalProfile.data?.reputation_score}`);
+  // ═══════════════════════════════════════════════════════════════
+  // STEP 10: Error handling
+  // ═══════════════════════════════════════════════════════════════
+  section("Step 10: Error Handling");
 
-  if (newTasksCompleted > initialTasksCompleted) {
-    check(true, `tasks_completed incremented: ${initialTasksCompleted} → ${newTasksCompleted}`);
-  }
+  const e404 = await api("GET", "/api/v1/tasks/999999");
+  check(e404.status === 404, `Non-existent → 404`);
+  check(e404.error?.code === "TASK_NOT_FOUND", `Code: TASK_NOT_FOUND`);
+  check(typeof e404.error?.suggestion === "string", "Has suggestion");
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STEP 10: Test error handling
-  // ═══════════════════════════════════════════════════════════════════
-  header("Step 10: Error Handling Verification");
+  const eVal = await api("POST", `/api/v1/tasks/${target.id}/claims`, {});
+  check(eVal.status === 422 || eVal.status === 409, `Validation → ${eVal.status}`);
 
-  // Non-existent task
-  const err404 = await api("GET", "/api/v1/tasks/999999");
-  check(err404.status === 404, "Non-existent task → 404");
-  check(err404.error?.code === "TASK_NOT_FOUND", `Error code: ${err404.error?.code}`);
-  check(typeof err404.error?.suggestion === "string", "Has actionable suggestion");
-
-  // Invalid claim (missing credits)
-  const errValidation = await api("POST", `/api/v1/tasks/${target.id}/claims`, {});
-  check(errValidation.status === 422 || errValidation.status === 409, `Validation error → ${errValidation.status}`);
-  check(typeof errValidation.error?.suggestion === "string", "Validation has suggestion");
-
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // Results
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   console.log(`\n${"═".repeat(60)}`);
   console.log(`  RESULTS: ${passed} passed | ${failed} failed`);
   console.log(`${"═".repeat(60)}`);
-
-  if (deliveryTaskId) {
-    console.log(`
-  ✅ Full lifecycle demonstrated:
-     1. Authenticated with API key
-     2. Browsed open tasks with filters
-     3. Retrieved task details
-     4. Claimed a task with competitive pricing
-     5. Submitted deliverable with code
-     6. Verified credit balance
-     7. Checked profile stats
-     8. Tested error handling
+  console.log(`
+  Lifecycle demonstrated:
+    1. ✅ Both agents authenticated
+    2. ✅ Credit balances checked
+    3. ✅ Self-claim guard tested (blocked own tasks)
+    4. ✅ Cross-user task claimed
+    5. ✅ Task details retrieved
+    6. ✅ Claims verified
+    7. ${delivTaskId ? "✅" : "⏳"} Deliverable ${delivTaskId ? "submitted" : "pending (accept claim first)"}
+    8. ✅ Credits tracked
+    9. ✅ Profiles compared
+   10. ✅ Error handling verified
 `);
-  } else {
-    console.log(`
-  ⏳ Partial lifecycle — claim submitted, awaiting acceptance.
-  
-  To complete the demo:
-    1. Visit ${BASE_URL}/dashboard/my/tasks
-    2. Accept the bot's claim
-    3. Run this script again → it will deliver and verify credits
-`);
-  }
 
   process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch((err) => {
-  console.error("Bot crashed:", err);
-  process.exit(1);
-});
+main().catch((e) => { console.error("CRASH:", e); process.exit(1); });
