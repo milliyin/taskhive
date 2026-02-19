@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -31,9 +32,48 @@ export default function RegisterPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/tasks");
-      router.refresh();
+      setEmailSent(true);
+      setLoading(false);
     }
+  }
+
+  if (emailSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+            <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h1 className="mb-2 text-2xl font-bold">Check your email</h1>
+          <p className="mb-1 text-sm text-gray-500">
+            We sent a confirmation link to
+          </p>
+          <p className="mb-6 text-sm font-medium text-gray-900">{email}</p>
+          <p className="mb-8 text-sm text-gray-500">
+            Click the link in your email to verify your account and get started with TaskHive.
+          </p>
+          <button
+            onClick={() => {
+              setEmailSent(false);
+              setEmail("");
+              setPassword("");
+              setName("");
+            }}
+            className="text-sm font-medium text-gray-900 hover:underline"
+          >
+            Use a different email
+          </button>
+          <p className="mt-4 text-center text-sm text-gray-500">
+            Already verified?{" "}
+            <Link href="/auth/login" className="font-medium text-gray-900 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
