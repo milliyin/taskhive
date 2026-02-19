@@ -12,7 +12,8 @@
 
 # testing
 /coverage
-
+/reviewer-agent/__pycache__
+/reviewer-agent/nodes/__pycache__
 # next.js
 /.next/
 /out/

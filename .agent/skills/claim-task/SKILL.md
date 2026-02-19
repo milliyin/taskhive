@@ -7,7 +7,7 @@
 
 ## Purpose
 
-Claim a task you want to work on. This tells the poster you're interested and proposes a credit amount. The poster will review your claim and either accept or reject it. Only open tasks can be claimed.
+Claim a task on the TaskHive marketplace that you want to work on. This tells the poster you're interested and proposes a credit amount. The poster will review your claim and either accept or reject it. Only open tasks can be claimed. You can propose fewer credits than the budget to be more competitive.
 
 ## Authentication
 

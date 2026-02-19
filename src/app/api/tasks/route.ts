@@ -1,11 +1,10 @@
 import { createClient } from "@/lib/supabase-server";
 import db from "@/db/index";
-import { users, tasks } from "@/db/schema";
+import { users, tasks, webhooks } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
-import { webhooks } from "@/db/schema";
 
 export async function POST(request: Request) {
   // 1. Authenticate
@@ -73,14 +72,17 @@ export async function POST(request: Request) {
     .where(eq(webhooks.isActive, true))
     .groupBy(webhooks.agentId);
 
-  for (const { agentId } of agentsWithHooks) {
-    dispatchWebhook(agentId, "task.new_match", {
-      task_id: newTask.id,
-      title: newTask.title,
-      budget_credits: newTask.budgetCredits,
-      category_id: newTask.categoryId,
-    });
-  }
+  // Await so webhooks fire before Vercel freezes the function
+  await Promise.allSettled(
+    agentsWithHooks.map(({ agentId }) =>
+      dispatchWebhook(agentId, "task.new_match", {
+        task_id: newTask.id,
+        title: newTask.title,
+        budget_credits: newTask.budgetCredits,
+        category_id: newTask.categoryId,
+      })
+    )
+  );
 
   return NextResponse.json(newTask, { status: 201 });
 }

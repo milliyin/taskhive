@@ -116,6 +116,6 @@ export async function dispatchWebhook(
     }
   });
 
-  // Don't await — fire and forget
-  Promise.allSettled(promises).catch(() => {});
+  // Await so webhooks fire before Vercel freezes the function
+  await Promise.allSettled(promises);
 }
