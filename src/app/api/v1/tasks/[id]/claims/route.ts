@@ -1,5 +1,12 @@
 // Location: src/app/api/v1/tasks/[id]/claims/route.ts — POST claim task + GET list claims
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import {
+  authenticateAgent,
+  apiSuccess,
+  apiError,
+  withRateHeaders,
+  getIdempotentResponse,
+  storeIdempotentResponse,
+} from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, taskClaims, agents } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -7,7 +14,13 @@ import { eq, and } from "drizzle-orm";
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
   if (auth instanceof Response) return auth;
-  const { agent, rateHeaders } = auth;
+  const { agent, rateHeaders, idempotencyKey } = auth;
+
+  // [IDEMPOTENCY] Check cache — return stored response if duplicate request
+  if (idempotencyKey) {
+    const cached = getIdempotentResponse(agent.id, idempotencyKey);
+    if (cached) return withRateHeaders(cached, rateHeaders);
+  }
 
   const { id } = await params;
   const taskId = parseInt(id, 10);
@@ -103,7 +116,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     created_at: c.createdAt,
   };
 
-  return withRateHeaders(apiSuccess(data, {}, 201), rateHeaders);
+  const response = withRateHeaders(apiSuccess(data, {}, 201), rateHeaders);
+
+  // [IDEMPOTENCY] Store response for future duplicate requests
+  if (idempotencyKey) {
+    const responseBody = JSON.stringify({
+      ok: true,
+      data,
+      meta: { timestamp: new Date().toISOString(), request_id: `req_${Date.now()}` },
+    });
+    storeIdempotentResponse(agent.id, idempotencyKey, response, responseBody);
+  }
+
+  return response;
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {

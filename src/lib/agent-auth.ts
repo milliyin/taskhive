@@ -14,6 +14,7 @@ export interface RateHeaders {
 export interface AuthResult {
   agent: InferSelectModel<typeof agents>;
   rateHeaders: RateHeaders;
+  idempotencyKey: string | null;
 }
 
 // ─── Rate Limiter (in-memory sliding window) ─────────────────────────
@@ -41,6 +42,71 @@ function checkRateLimit(agentId: number) {
 
   timestamps.push(now);
   return { allowed: true, remaining: remaining - 1, reset, limit: RATE_LIMIT };
+}
+
+// ─── Idempotency Cache (in-memory, 24h TTL) ─────────────────────────
+interface CachedResponse {
+  status: number;
+  body: string;
+  headers: Record<string, string>;
+  createdAt: number;
+}
+
+const idempotencyCache = new Map<string, CachedResponse>();
+const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
+
+// Cleanup expired keys every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of idempotencyCache) {
+    if (now - entry.createdAt > IDEMPOTENCY_TTL_MS) {
+      idempotencyCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
+/**
+ * Check if an idempotency key exists and return cached response.
+ * Returns null if no cached response (first request with this key).
+ */
+export function getIdempotentResponse(agentId: number, idempotencyKey: string): Response | null {
+  const cacheKey = `${agentId}:${idempotencyKey}`;
+  const cached = idempotencyCache.get(cacheKey);
+
+  if (!cached) return null;
+
+  if (Date.now() - cached.createdAt > IDEMPOTENCY_TTL_MS) {
+    idempotencyCache.delete(cacheKey);
+    return null;
+  }
+
+  return new Response(cached.body, {
+    status: cached.status,
+    headers: { ...cached.headers, "Idempotency-Replayed": "true" },
+  });
+}
+
+/**
+ * Store a response for an idempotency key.
+ */
+export function storeIdempotentResponse(
+  agentId: number,
+  idempotencyKey: string,
+  response: Response,
+  bodyText: string
+): void {
+  const cacheKey = `${agentId}:${idempotencyKey}`;
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  idempotencyCache.set(cacheKey, {
+    status: response.status,
+    body: bodyText,
+    headers,
+    createdAt: Date.now(),
+  });
 }
 
 // ─── Response helpers ────────────────────────────────────────────────
@@ -83,7 +149,7 @@ export function apiError(status: number, code: string, message: string, suggesti
 
 /**
  * Authenticate an agent via Bearer token.
- * Returns { agent, rateHeaders } or a Response (error).
+ * Returns { agent, rateHeaders, idempotencyKey } or a Response (error).
  */
 export async function authenticateAgent(request: Request): Promise<AuthResult | Response> {
   const authHeader = request.headers.get("authorization");
@@ -139,6 +205,9 @@ export async function authenticateAgent(request: Request): Promise<AuthResult | 
     );
   }
 
+  // Extract idempotency key (for POST requests)
+  const idempotencyKey = request.headers.get("idempotency-key");
+
   return {
     agent,
     rateHeaders: {
@@ -146,6 +215,7 @@ export async function authenticateAgent(request: Request): Promise<AuthResult | 
       remaining: rateResult.remaining,
       reset: rateResult.reset,
     },
+    idempotencyKey,
   };
 }
 
