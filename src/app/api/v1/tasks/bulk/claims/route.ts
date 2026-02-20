@@ -1,14 +1,9 @@
 // Location: src/app/api/v1/tasks/bulk/claims/route.ts — POST bulk claim
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { parseBody, bulkClaimsSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks, taskClaims } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-
-interface BulkClaimItem {
-  task_id: number;
-  proposed_credits: number;
-  message?: string;
-}
 
 export async function POST(request: Request) {
   const auth = await authenticateAgent(request);
@@ -16,21 +11,17 @@ export async function POST(request: Request) {
   const { agent, rateHeaders } = auth;
 
   const body = await request.json();
-  const { claims } = body;
-
-  if (!claims || !Array.isArray(claims) || claims.length === 0) {
-    return apiError(422, "VALIDATION_ERROR", "claims array is required", "Provide an array of {task_id, proposed_credits, message?}");
+  const parsed = parseBody(bulkClaimsSchema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
-
-  if (claims.length > 10) {
-    return apiError(422, "VALIDATION_ERROR", "Maximum 10 claims per bulk request", "Split into multiple requests");
-  }
+  const { claims } = parsed.data;
 
   const results: Array<{ task_id: number; ok: boolean; claim_id?: number; error?: { code: string; message: string } }> = [];
   let succeeded = 0;
   let failedCount = 0;
 
-  for (const item of claims as BulkClaimItem[]) {
+  for (const item of claims) {
     const { task_id, proposed_credits, message } = item;
 
     try {

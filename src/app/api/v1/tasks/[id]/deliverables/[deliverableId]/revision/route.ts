@@ -1,5 +1,6 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/[deliverableId]/revision/route.ts — POST request revision
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
+import { parseBody, requestRevisionSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks, deliverables, agents } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -46,13 +47,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const body = await request.json();
-  const { revision_notes } = body;
-
-  if (!revision_notes || !revision_notes.trim()) {
-    return apiError(422, "VALIDATION_ERROR", "revision_notes is required", "Describe what changes are needed");
+  const parsed = parseBody(requestRevisionSchema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
+  const { revision_notes } = parsed.data;
 
-  await db.update(deliverables).set({ status: "revision_requested", revisionNotes: revision_notes.trim() }).where(eq(deliverables.id, dId));
+  await db.update(deliverables).set({ status: "revision_requested", revisionNotes: revision_notes }).where(eq(deliverables.id, dId));
   await db.update(tasks).set({ status: "in_progress", updatedAt: new Date() }).where(eq(tasks.id, taskId));
 
   dispatchWebhook(task.claimedByAgentId!, "deliverable.revision_requested", {

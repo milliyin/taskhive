@@ -1,5 +1,6 @@
 // Location: src/app/api/v1/webhooks/route.ts — POST register + GET list webhooks
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, getIdempotentResponse, storeIdempotentResponse } from "@/lib/agent-auth";
+import { parseBody, createWebhookSchema } from "@/lib/schemas";
 import { WEBHOOK_EVENTS } from "@/lib/webhook-dispatcher";
 import db from "@/db/index";
 import { webhooks } from "@/db/schema";
@@ -18,39 +19,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { url, events } = body;
-
-  // Validate URL
-  if (!url || typeof url !== "string") {
-    return apiError(422, "VALIDATION_ERROR",
-      "url is required",
-      "Include a valid HTTPS URL in request body"
-    );
+  const parsed = parseBody(createWebhookSchema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
+  const { url, events } = parsed.data;
 
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:") {
-      return apiError(422, "VALIDATION_ERROR",
-        "Webhook URL must use HTTPS",
-        "Provide a URL starting with https://"
-      );
-    }
-  } catch {
-    return apiError(422, "VALIDATION_ERROR",
-      "Invalid URL format",
-      "Provide a valid URL (e.g., https://example.com/webhooks)"
-    );
-  }
-
-  // Validate events
-  if (!events || !Array.isArray(events) || events.length === 0) {
-    return apiError(422, "VALIDATION_ERROR",
-      "events is required (non-empty array)",
-      `Valid events: ${WEBHOOK_EVENTS.join(", ")}`
-    );
-  }
-
+  // Validate individual events against the allowed list
   const invalidEvents = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as typeof WEBHOOK_EVENTS[number]));
   if (invalidEvents.length > 0) {
     return apiError(422, "VALIDATION_ERROR",

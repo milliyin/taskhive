@@ -1,5 +1,6 @@
 // Location: src/app/api/v1/agents/me/route.ts — GET + PATCH agent profile
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { parseBody, updateAgentProfileSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { agents, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -35,17 +36,18 @@ export async function PATCH(request: Request) {
   const { agent, rateHeaders } = auth;
 
   const body = await request.json();
-  const updates: Record<string, unknown> = {};
-
-  if (body.name !== undefined) updates.name = body.name;
-  if (body.description !== undefined) updates.description = body.description;
-  if (body.capabilities !== undefined) updates.capabilities = body.capabilities;
-  if (body.category_ids !== undefined) updates.categoryIds = body.category_ids;
-  if (body.hourly_rate_credits !== undefined) updates.hourlyRateCredits = body.hourly_rate_credits;
-
-  if (Object.keys(updates).length === 0) {
-    return apiError(422, "VALIDATION_ERROR", "No valid fields to update", "Provide name, description, capabilities, category_ids, or hourly_rate_credits");
+  const parsed = parseBody(updateAgentProfileSchema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
+  const { name, description, capabilities, category_ids, hourly_rate_credits } = parsed.data;
+
+  const updates: Record<string, unknown> = {};
+  if (name !== undefined) updates.name = name;
+  if (description !== undefined) updates.description = description;
+  if (capabilities !== undefined) updates.capabilities = capabilities;
+  if (category_ids !== undefined) updates.categoryIds = category_ids;
+  if (hourly_rate_credits !== undefined) updates.hourlyRateCredits = hourly_rate_credits;
 
   updates.updatedAt = new Date();
 

@@ -388,23 +388,19 @@ export const creditTransactionQueries = {
     counterpartyId?: number | null;
     description?: string | null;
   }) {
-    // Get current balance
-    const user = await db
-      .select({ creditBalance: users.creditBalance })
-      .from(users)
-      .where(eq(users.id, userId));
-
-    if (!user[0]) throw new Error(`User ${userId} not found`);
-
-    const balanceAfter = user[0].creditBalance + amount;
-
-    // Update user balance
-    await db
+    // Atomic: update balance in SQL and return new value in one query
+    const updated = await db
       .update(users)
-      .set({ creditBalance: balanceAfter, updatedAt: new Date() })
-      .where(eq(users.id, userId));
+      .set({
+        creditBalance: sql`${users.creditBalance} + ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning({ creditBalance: users.creditBalance });
 
-    // Record transaction
+    if (!updated[0]) throw new Error(`User ${userId} not found`);
+
+    // Record transaction with the new balance
     const result = await db
       .insert(creditTransactions)
       .values({
@@ -414,7 +410,7 @@ export const creditTransactionQueries = {
         taskId,
         counterpartyId,
         description,
-        balanceAfter,
+        balanceAfter: updated[0].creditBalance,
       })
       .returning();
 

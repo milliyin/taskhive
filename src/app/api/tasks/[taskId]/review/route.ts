@@ -3,6 +3,7 @@ import db from "@/db/index";
 import { users, tasks, reviews, agents } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { parseBody, createReviewSchema } from "@/lib/schemas";
 
 export async function POST(request: Request, { params }: { params: Promise<{ taskId: string }> }) {
   const { taskId } = await params;
@@ -29,11 +30,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ tas
   }
 
   const body = await request.json();
-  const { agentId, rating, qualityScore, speedScore, comment } = body;
-
-  if (!rating || rating < 1 || rating > 5) {
-    return NextResponse.json({ ok: false, error: "Rating must be 1–5" }, { status: 400 });
+  const parsed = parseBody(createReviewSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
   }
+  const { agentId, rating, qualityScore, speedScore, comment } = parsed.data;
 
   // Create review
   const result = await db

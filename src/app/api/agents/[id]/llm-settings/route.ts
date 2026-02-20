@@ -5,6 +5,7 @@ import { users, agents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { encrypt } from "@/lib/encryption";
+import { parseBody, llmSettingsSchema } from "@/lib/schemas";
 
 async function getAuthenticatedAgent(agentId: number) {
   const supabase = await createClient();
@@ -29,16 +30,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if ("error" in auth) return auth.error;
 
   const body = await request.json();
-  const { freelancerLlmProvider, freelancerLlmKey } = body;
-
-  if (!freelancerLlmProvider || !freelancerLlmKey) {
-    return NextResponse.json({ ok: false, error: "Provider and key are required" }, { status: 400 });
+  const parsed = parseBody(llmSettingsSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
   }
-
-  const validProviders = ["openrouter", "anthropic", "openai"];
-  if (!validProviders.includes(freelancerLlmProvider)) {
-    return NextResponse.json({ ok: false, error: "Invalid provider" }, { status: 400 });
-  }
+  const { freelancerLlmProvider, freelancerLlmKey } = parsed.data;
 
   await db.update(agents).set({
     freelancerLlmProvider: freelancerLlmProvider,

@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 import { encrypt } from "@/lib/encryption";
+import { parseBody, createTaskSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   // 1. Authenticate
@@ -31,24 +32,15 @@ export async function POST(request: Request) {
 
   // 3. Parse & validate
   const body = await request.json();
+  const parsed = parseBody(createTaskSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
+  }
   const { title, description, budgetCredits, categoryId, deadline, maxRevisions,
-    autoReviewEnabled, posterLlmKey, posterLlmProvider, posterMaxReviews } = body;
+    autoReviewEnabled, posterLlmKey, posterLlmProvider, posterMaxReviews } = parsed.data;
 
-  const errors: string[] = [];
-
-  if (!title || title.length < 5 || title.length > 200)
-    errors.push("Title must be 5–200 characters");
-  if (!description || description.length < 20 || description.length > 5000)
-    errors.push("Description must be 20–5000 characters");
-  if (!budgetCredits || budgetCredits < PLATFORM.MIN_TASK_BUDGET)
-    errors.push(`Budget must be at least ${PLATFORM.MIN_TASK_BUDGET} credits`);
-  if (deadline && new Date(deadline) <= new Date())
-    errors.push("Deadline must be in the future");
-  if (maxRevisions !== undefined && (maxRevisions < 0 || maxRevisions > 5))
-    errors.push("Max revisions must be 0–5");
-
-  if (errors.length > 0) {
-    return NextResponse.json({ ok: false, error: errors.join(". ") }, { status: 400 });
+  if (deadline && new Date(deadline) <= new Date()) {
+    return NextResponse.json({ ok: false, error: "Deadline must be in the future" }, { status: 400 });
   }
 
   // 4. Create task — no credits locked or deducted
@@ -57,7 +49,7 @@ export async function POST(request: Request) {
     title,
     description,
     budgetCredits,
-    categoryId: categoryId ? parseInt(categoryId, 10) : null,
+    categoryId: categoryId ? parseInt(String(categoryId), 10) : null,
     deadline: deadline ? new Date(deadline) : null,
     maxRevisions: maxRevisions ?? PLATFORM.MAX_REVISIONS_DEFAULT,
   };
@@ -67,7 +59,7 @@ export async function POST(request: Request) {
     taskValues.autoReviewEnabled = true;
     if (posterLlmProvider) taskValues.posterLlmProvider = posterLlmProvider;
     if (posterLlmKey) taskValues.posterLlmKeyEncrypted = encrypt(posterLlmKey);
-    if (posterMaxReviews) taskValues.posterMaxReviews = parseInt(posterMaxReviews, 10);
+    if (posterMaxReviews) taskValues.posterMaxReviews = parseInt(String(posterMaxReviews), 10);
   }
 
   const result = await db

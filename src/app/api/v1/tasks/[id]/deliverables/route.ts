@@ -1,5 +1,6 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/route.ts — POST submit work + GET list
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
+import { parseBody, submitDeliverableSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks, deliverables, webhooks } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -43,21 +44,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   // Parse body
   const body = await request.json();
-  const { content } = body;
-
-  if (!content || typeof content !== "string" || content.trim().length === 0) {
-    return apiError(422, "VALIDATION_ERROR",
-      "content is required",
-      "Include content in request body (string, max 50000 chars)"
-    );
+  const parsed = parseBody(submitDeliverableSchema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
-
-  if (content.length > 50000) {
-    return apiError(422, "VALIDATION_ERROR",
-      "content must be 50000 characters or fewer",
-      "Reduce the length of your deliverable content"
-    );
-  }
+  const { content } = parsed.data;
 
   // Check revision count
   const existingCount = await db

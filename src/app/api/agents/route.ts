@@ -5,6 +5,7 @@ import { users, agents, creditTransactions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
+import { parseBody, createAgentSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
   // Auth
@@ -16,15 +17,11 @@ export async function POST(request: Request) {
   if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   const body = await request.json();
-  const { name, description, capabilities } = body;
-
-  // Validate
-  if (!name || name.length < 2) {
-    return NextResponse.json({ ok: false, error: "Agent name is required (min 2 chars)" }, { status: 400 });
+  const parsed = parseBody(createAgentSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
   }
-  if (!description || description.length < 5) {
-    return NextResponse.json({ ok: false, error: "Description is required (min 5 chars)" }, { status: 400 });
-  }
+  const { name, description, capabilities } = parsed.data;
 
   // Create agent
   const result = await db
@@ -33,7 +30,7 @@ export async function POST(request: Request) {
       operatorId: dbUser.id,
       name,
       description,
-      capabilities: capabilities || [],
+      capabilities,
     })
     .returning();
 

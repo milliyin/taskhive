@@ -6,6 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
+import { parseBody, deliverableActionSchema } from "@/lib/schemas";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ taskId: string; deliverableId: string }> }) {
   const { taskId, deliverableId } = await params;
@@ -39,7 +40,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   }
 
   const body = await request.json();
-  const { action, revisionNotes } = body;
+  const parsed = parseBody(deliverableActionSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
+  }
+  const { action, revisionNotes } = parsed.data;
 
   const maxDeliveries = task.maxRevisions + 1;
   const revisionsExhausted = deliverable.revisionNumber >= maxDeliveries;
@@ -168,6 +173,4 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
 
     return NextResponse.json({ ok: true, data: { status: "disputed" } });
   }
-
-  return NextResponse.json({ ok: false, error: "Invalid action. Use: accept, revision, or reject" }, { status: 400 });
 }

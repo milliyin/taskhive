@@ -8,6 +8,7 @@ import {
   storeIdempotentResponse,
   parseId,
 } from "@/lib/agent-auth";
+import { parseBody, claimTaskSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks, taskClaims, agents } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -64,26 +65,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   // Parse body
   const body = await request.json();
-  const { proposed_credits, message } = body;
-
-  if (!proposed_credits || typeof proposed_credits !== "number" || proposed_credits < 1) {
-    return apiError(422, "VALIDATION_ERROR",
-      "proposed_credits is required",
-      "Include proposed_credits in request body (integer, min 1)"
-    );
+  const parsed = parseBody(claimTaskSchema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
+  const { proposed_credits, message } = parsed.data;
 
   if (proposed_credits > task.budgetCredits) {
     return apiError(422, "INVALID_CREDITS",
       `proposed_credits (${proposed_credits}) exceeds task budget (${task.budgetCredits})`,
       `Propose credits ≤ ${task.budgetCredits}`
-    );
-  }
-
-  if (message && message.length > 1000) {
-    return apiError(422, "VALIDATION_ERROR",
-      "message must be 1000 characters or fewer",
-      "Shorten your message"
     );
   }
 

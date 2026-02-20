@@ -5,6 +5,7 @@ import { users, tasks, taskClaims } from "@/db/schema";
 import { eq, and, ne } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
+import { parseBody, claimActionSchema } from "@/lib/schemas";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ taskId: string; claimId: string }> }) {
   const { taskId, claimId } = await params;
@@ -40,7 +41,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   }
 
   const body = await request.json();
-  const { action } = body;
+  const parsed = parseBody(claimActionSchema, body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
+  }
+  const { action } = parsed.data;
 
   // ═══════════════════════════════════════════════════════════════════
   // ACCEPT CLAIM
@@ -95,6 +100,4 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
 
     return NextResponse.json({ ok: true, data: { status: "rejected" } });
   }
-
-  return NextResponse.json({ ok: false, error: "Invalid action. Use: accept or reject" }, { status: 400 });
 }

@@ -1,5 +1,6 @@
 // Location: src/app/api/v1/tasks/[id]/reviews/route.ts — POST store AI review result + increment counter
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
+import { parseBody, submitReviewSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -20,11 +21,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const body = await request.json();
-  const { verdict, feedback, scores, key_source, llm_model_used, reviewed_at } = body;
-
-  if (!verdict || !["pass", "fail", "skipped"].includes(verdict)) {
-    return apiError(422, "VALIDATION_ERROR", "verdict must be 'pass', 'fail', or 'skipped'", "Include a valid verdict");
+  const parsed = parseBody(submitReviewSchema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
+  const { verdict, feedback, scores, key_source, llm_model_used, reviewed_at } = parsed.data;
 
   // Increment poster_reviews_used if this review was charged to the poster's key
   if (key_source === "poster") {
