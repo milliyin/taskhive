@@ -118,9 +118,9 @@ def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: in
 
     while True:
         try:
-            # Get agent's active tasks
+            # Fetch all tasks in "delivered" status (awaiting review)
             resp = requests.get(
-                f"{taskhive_url}/api/v1/agents/me/tasks",
+                f"{taskhive_url}/api/v1/tasks?status=delivered&limit=50",
                 headers=headers,
                 timeout=15,
             )
@@ -129,7 +129,7 @@ def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: in
                 tasks_data = resp.json().get("data", [])
 
                 for task in tasks_data:
-                    task_id = task.get("task_id") or task.get("id")
+                    task_id = task.get("id")
                     if not task_id:
                         continue
 
@@ -147,6 +147,8 @@ def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: in
                                 print(f"\n  🆕 New deliverable found: Task #{task_id}, Deliverable #{d['id']}")
                                 run_review(task_id, d["id"], taskhive_url, taskhive_api_key)
                                 reviewed.add(d["id"])
+            else:
+                print(f"  ⚠️  Tasks fetch returned {resp.status_code}")
 
             time.sleep(interval)
 
