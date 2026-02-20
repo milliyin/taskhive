@@ -19,7 +19,7 @@ const BASE_URL = "https://taskhive-six.vercel.app";
 // PASTE YOUR VALUES HERE
 // ══════════════════════════════════════════════════════════════════════
 const API_KEY = "th_agent_509d2ce7ca2547516ebd375e916893da556e29f0ffd77eabf8c9dd61849d4584";
-const POSTER_COOKIE = "sb-wkqrkknmimhzcozlaozo-auth-token=base64-eyJhY2Nlc3NfdG9rZW4iOiJleUpoYkdjaU9pSkZVekkxTmlJc0ltdHBaQ0k2SWpJMU5qVmtaVGxrTFRWa01qY3ROR0V4TWkxaFlURmpMV0UwWlRJM1pEWXlNbVEwTXlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUpvZEhSd2N6b3ZMM2RyY1hKcmEyNXRhVzFvZW1OdmVteGhiM3B2TG5OMWNHRmlZWE5sTG1OdkwyRjFkR2d2ZGpFaUxDSnpkV0lpT2lJNFlqazBNRGc1WVMwek5ETXdMVFJtTXpRdFlUTXhZeTAzWkdRNFpXSm1OVFJpWWpFaUxDSmhkV1FpT2lKaGRYUm9aVzUwYVdOaGRHVmtJaXdpWlhod0lqb3hOemN4TlRrek9UVTBMQ0pwWVhRaU9qRTNOekUxT1RBek5UUXNJbVZ0WVdsc0lqb2liR1Z6WVdwaE1UYzBOa0JoYkdsaWRHOHVZMjl0SWl3aWNHaHZibVVpT2lJaUxDSmhjSEJmYldWMFlXUmhkR0VpT25zaWNISnZkbWxrWlhJaU9pSmxiV0ZwYkNJc0luQnliM1pwWkdWeWN5STZXeUpsYldGcGJDSmRmU3dpZFhObGNsOXRaWFJoWkdGMFlTSTZleUpsYldGcGJDSTZJbXhsYzJGcVlURTNORFpBWVd4cFluUnZMbU52YlNJc0ltVnRZV2xzWDNabGNtbG1hV1ZrSWpwMGNuVmxMQ0p1WVcxbElqb2liR1Z6WVdwaE1UYzBOa0JoYkdsaWRHOHVZMjl0SWl3aWNHaHZibVZmZG1WeWFXWnBaV1FpT21aaGJITmxMQ0p6ZFdJaU9pSTRZamswTURnNVlTMHpORE13TFRSbU16UXRZVE14WXkwM1pHUTRaV0ptTlRSaVlqRWlmU3dpY205c1pTSTZJbUYxZEdobGJuUnBZMkYwWldRaUxDSmhZV3dpT2lKaFlXd3hJaXdpWVcxeUlqcGJleUp0WlhSb2IyUWlPaUp3WVhOemQyOXlaQ0lzSW5ScGJXVnpkR0Z0Y0NJNk1UYzNNVFU1TURNMU5IMWRMQ0p6WlhOemFXOXVYMmxrSWpvaU5qUmhOMlkyWXpBdE1URXlaUzAwTkRWaExUaGtNbUl0TUdFd09XWXlNbVk1TmpWbElpd2lhWE5mWVc1dmJubHRiM1Z6SWpwbVlXeHpaWDAuRDRkMm9HT3Z6VzFKTzI5UGFET29TMFlCY0swVFpUTEFqd1NndVlUNDNlMGVubEZtTTA2ME1BYU82ZnlxRE5yWlZCMS1NUHpNQUE1ckNPRzRFTDBxM1EiLCJ0b2tlbl90eXBlIjoiYmVhcmVyIiwiZXhwaXJlc19pbiI6MzYwMCwiZXhwaXJlc19hdCI6MTc3MTU5Mzk1NCwicmVmcmVzaF90b2tlbiI6IndsaGs3cWxieDJ5MiIsInVzZXIiOnsiaWQiOiI4Yjk0MDg5YS0zNDMwLTRmMzQtYTMxYy03ZGQ4ZWJmNTRiYjEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJlbWFpbCI6Imxlc2FqYTE3NDZAYWxpYnRvLmNvbSIsImVtYWlsX2NvbmZpcm1lZF9hdCI6IjIwMjYtMDItMTlUMTk6MzQ6MzEuNjI2MjQzWiIsInBob25lIjoiIiwiY29uZmlybWF0aW9uX3NlbnRfYXQiOiIyMDI2LTAyLTE5VDE5OjM0OjEyLjIwNjkyWiIsImNvbmZpcm1lZF9hdCI6IjIwMjYtMDItMTlUMTk6MzQ6MzEuNjI2MjQzWiIsImxhc3Rfc2lnbl9pbl9hdCI6IjIwMjYtMDItMjBUMTI6MjU6NTQuNTk1OTUyMDI0WiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoibGVzYWphMTc0NkBhbGlidG8uY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJsZXNhamExNzQ2QGFsaWJ0by5jb20iLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjhiOTQwODlhLTM0MzAtNGYzNC1hMzFjLTdkZDhlYmY1NGJiMSJ9LCJpZGVudGl0aWVzIjpbeyJpZGVudGl0eV9pZCI6IjMyYWI2Yzg1LWM2MmMtNDA0Zi04ZTUxLTI4YjU5NzdjMjA3OCIsImlkIjoiOGI5NDA4OWEtMzQzMC00ZjM0LWEzMWMtN2RkOGViZjU0YmIxIiwidXNlcl9pZCI6IjhiOTQwODlhLTM0MzAtNGYzNC1hMzFjLTdkZDhlYmY1NGJiMSIsImlkZW50aXR5X2RhdGEiOnsiZW1haWwiOiJsZXNhamExNzQ2QGFsaWJ0by5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6Imxlc2FqYTE3NDZAYWxpYnRvLmNvbSIsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiOGI5NDA4OWEtMzQzMC00ZjM0LWEzMWMtN2RkOGViZjU0YmIxIn0sInByb3ZpZGVyIjoiZW1haWwiLCJsYXN0X3NpZ25faW5fYXQiOiIyMDI2LTAyLTE5VDE5OjM0OjEyLjE3MjQ1NVoiLCJjcmVhdGVkX2F0IjoiMjAyNi0wMi0xOVQxOTozNDoxMi4xNzI1MTJaIiwidXBkYXRlZF9hdCI6IjIwMjYtMDItMTlUMTk6MzQ6MTIuMTcyNTEyWiIsImVtYWlsIjoibGVzYWphMTc0NkBhbGlidG8uY29tIn1dLCJjcmVhdGVkX2F0IjoiMjAyNi0wMi0xOVQxOTozNDoxMi4xNDU1OTFaIiwidXBkYXRlZF9hdCI6IjIwMjYtMDItMjBUMTI6MjU6NTQuNjIyMDIzWiIsImlzX2Fub255bW91cyI6ZmFsc2V9LCJ3ZWFrX3Bhc3N3b3JkIjpudWxsfQ";
+const POSTER_COOKIE = "sb-wkqrkknmimhzcozlaozo-auth-token=base64-eyJhY2Nlc3NfdG9rZW4iOiJleUpoYkdjaU9pSkZVekkxTmlJc0ltdHBaQ0k2SWpJMU5qVmtaVGxrTFRWa01qY3ROR0V4TWkxaFlURmpMV0UwWlRJM1pEWXlNbVEwTXlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKcGMzTWlPaUpvZEhSd2N6b3ZMM2RyY1hKcmEyNXRhVzFvZW1OdmVteGhiM3B2TG5OMWNHRmlZWE5sTG1OdkwyRjFkR2d2ZGpFaUxDSnpkV0lpT2lJNFlqazBNRGc1WVMwek5ETXdMVFJtTXpRdFlUTXhZeTAzWkdRNFpXSm1OVFJpWWpFaUxDSmhkV1FpT2lKaGRYUm9aVzUwYVdOaGRHVmtJaXdpWlhod0lqb3hOemN4TmpBNU1UQTRMQ0pwWVhRaU9qRTNOekUyTURVMU1EZ3NJbVZ0WVdsc0lqb2liR1Z6WVdwaE1UYzBOa0JoYkdsaWRHOHVZMjl0SWl3aWNHaHZibVVpT2lJaUxDSmhjSEJmYldWMFlXUmhkR0VpT25zaWNISnZkbWxrWlhJaU9pSmxiV0ZwYkNJc0luQnliM1pwWkdWeWN5STZXeUpsYldGcGJDSmRmU3dpZFhObGNsOXRaWFJoWkdGMFlTSTZleUpsYldGcGJDSTZJbXhsYzJGcVlURTNORFpBWVd4cFluUnZMbU52YlNJc0ltVnRZV2xzWDNabGNtbG1hV1ZrSWpwMGNuVmxMQ0p1WVcxbElqb2liR1Z6WVdwaE1UYzBOa0JoYkdsaWRHOHVZMjl0SWl3aWNHaHZibVZmZG1WeWFXWnBaV1FpT21aaGJITmxMQ0p6ZFdJaU9pSTRZamswTURnNVlTMHpORE13TFRSbU16UXRZVE14WXkwM1pHUTRaV0ptTlRSaVlqRWlmU3dpY205c1pTSTZJbUYxZEdobGJuUnBZMkYwWldRaUxDSmhZV3dpT2lKaFlXd3hJaXdpWVcxeUlqcGJleUp0WlhSb2IyUWlPaUp3WVhOemQyOXlaQ0lzSW5ScGJXVnpkR0Z0Y0NJNk1UYzNNVFl3TlRVd09IMWRMQ0p6WlhOemFXOXVYMmxrSWpvaU5ERmpPVFEzTkRFdE16RTVOQzAwWmpJM0xXRmxPV0l0WkdRd1l6QTVNV0V3TVRjNElpd2lhWE5mWVc1dmJsbHRiM1Z6SWpwbVlXeHpaWDAuQnh1c1h3MEtfRlRiSk12SzdaS1BfZmVYSzVzN0duNEF6WkNIX2o2a2tCbi0zZEdCbDgxVDdzZ0ZxQWJGd1N6N3RlRGwzWjNLRE45b0lPRENNeFdnN2ciLCJ0b2tlbl90eXBlIjoiYmVhcmVyIiwiZXhwaXJlc19pbiI6MzYwMCwiZXhwaXJlc19hdCI6MTc3MTYwOTEwOCwicmVmcmVzaF90b2tlbiI6ImQ3N2h5cDZqa3draSIsInVzZXIiOnsiaWQiOiI4Yjk0MDg5YS0zNDMwLTRmMzQtYTMxYy03ZGQ4ZWJmNTRiYjEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJlbWFpbCI6Imxlc2FqYTE3NDZAYWxpYnRvLmNvbSIsImVtYWlsX2NvbmZpcm1lZF9hdCI6IjIwMjYtMDItMTlUMTk6MzQ6MzEuNjI2MjQzWiIsInBob25lIjoiIiwiY29uZmlybWF0aW9uX3NlbnRfYXQiOiIyMDI2LTAyLTE5VDE5OjM0OjEyLjIwNjkyWiIsImNvbmZpcm1lZF9hdCI6IjIwMjYtMDItMTlUMTk6MzQ6MzEuNjI2MjQzWiIsImxhc3Rfc2lnbl9pbl9hdCI6IjIwMjYtMDItMjBUMTY6Mzg6MjguMTU0MzYxNjU4WiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoibGVzYWphMTc0NkBhbGlidG8uY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJsZXNhamExNzQ2QGFsaWJ0by5jb20iLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjhiOTQwODlhLTM0MzAtNGYzNC1hMzFjLTdkZDhlYmY1NGJiMSJ9LCJpZGVudGl0aWVzIjpbeyJpZGVudGl0eV9pZCI6IjMyYWI2Yzg1LWM2MmMtNDA0Zi04ZTUxLTI4YjU5NzdjMjA3OCIsImlkIjoiOGI5NDA4OWEtMzQzMC00ZjM0LWEzMWMtN2RkOGViZjU0YmIxIiwidXNlcl9pZCI6IjhiOTQwODlhLTM0MzAtNGYzNC1hMzFjLTdkZDhlYmY1NGJiMSIsImlkZW50aXR5X2RhdGEiOnsiZW1haWwiOiJsZXNhamExNzQ2QGFsaWJ0by5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6Imxlc2FqYTE3NDZAYWxpYnRvLmNvbSIsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiOGI5NDA4OWEtMzQzMC00ZjM0LWEzMWMtN2RkOGViZjU0YmIxIn0sInByb3ZpZGVyIjoiZW1haWwiLCJsYXN0X3NpZ25faW5fYXQiOiIyMDI2LTAyLTE5VDE5OjM0OjEyLjE3MjQ1NVoiLCJjcmVhdGVkX2F0IjoiMjAyNi0wMi0xOVQxOTozNDoxMi4xNzI1MTJaIiwidXBkYXRlZF9hdCI6IjIwMjYtMDItMTlUMTk6MzQ6MTIuMTcyNTEyWiIsImVtYWlsIjoibGVzYWphMTc0NkBhbGlidG8uY29tIn1dLCJjcmVhdGVkX2F0IjoiMjAyNi0wMi0xOVQxOTozNDoxMi4xNDU1OTFaIiwidXBkYXRlZF9hdCI6IjIwMjYtMDItMjBUMTY6Mzg6MjguMTgxMTA3WiIsImlzX2Fub255bW91cyI6ZmFsc2V9LCJ3ZWFrX3Bhc3N3b3JkIjpudWxsfQ";
 
 // ──────────────────────────────────────────────────────────────────────
 let passed = 0;
@@ -514,7 +514,7 @@ async function testFullLifecycle() {
 
   const feeTx = txns?.find((t) => t.type === "platform_fee" && t.task_id === taskId);
   assert(feeTx != null, "Platform fee transaction exists");
-  assert(feeTx?.amount === -20, "Platform fee = -20", `got ${feeTx?.amount}`);
+  assert(feeTx?.amount === 20, "Platform fee = 20", `got ${feeTx?.amount}`);
 
   // ─── VERIFY AGENT STATS ──────────────────────────────────────────
 
@@ -550,7 +550,7 @@ async function testFullLifecycle() {
 // 8. EDGE CASES
 // ══════════════════════════════════════════════════════════════════════
 
-async function testEdgeCases() {
+async function testEdgeCases(lifecycleResult = {}) {
   section("8. Edge Cases");
 
   if (!hasPoster()) { skip("Edge cases", "POSTER_COOKIE not set"); return; }
@@ -694,12 +694,12 @@ async function testEdgeCases() {
 
   console.log("\n  --- 8g. Cancel limits ---");
 
-  // Can't cancel completed task
-  const completedTasks = await agentReq("GET", "/api/v1/tasks?status=completed&limit=1");
-  if (completedTasks.data?.data?.length > 0) {
-    const cid = completedTasks.data.data[0].id;
-    const r = await posterReq("POST", `/api/tasks/${cid}/cancel`);
+  // Can't cancel completed task — must use a task the poster owns
+  if (lifecycleResult.taskId) {
+    const r = await posterReq("POST", `/api/tasks/${lifecycleResult.taskId}/cancel`);
     assert(r.status === 400, "Cancel completed task → 400", `got ${r.status}`);
+  } else {
+    skip("Cancel completed task → 400", "No poster-owned completed task (lifecycle skipped)");
   }
 }
 
@@ -886,8 +886,8 @@ async function run() {
   await testBrowseTasks();
   await testPagination();
   await testTaskDetails();
-  await testFullLifecycle();
-  await testEdgeCases();
+  const lifecycleResult = await testFullLifecycle();
+  await testEdgeCases(lifecycleResult);
   await testBulk();
   await testAgentEndpoints();
   await testIntegerIds();

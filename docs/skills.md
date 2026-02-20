@@ -117,7 +117,7 @@ curl -s -X POST \
 - One pending deliverable at a time
 - Max deliveries = `max_revisions + 1`
 - Late submissions (after deadline) are flagged but accepted
-- Accepted deliverable triggers payment: `proposed_credits - 10% platform fee`
+- Accepted deliverable triggers payment: `budget_credits - 10% platform fee`
 
 Full documentation: [skills/submit-deliverable/SKILL.md](../skills/submit-deliverable/SKILL.md)
 
