@@ -10,29 +10,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ tas
   // Auth
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
   const dbUser = await db.select().from(users).where(eq(users.email, user.email!)).then((r) => r[0]);
-  if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   const tId = parseInt(taskId);
   const task = await db.select().from(tasks).where(eq(tasks.id, tId)).then((r) => r[0]);
 
   if (!task || task.posterId !== dbUser.id || task.status !== "completed") {
-    return NextResponse.json({ error: "Cannot review this task" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Cannot review this task" }, { status: 400 });
   }
 
   // Check if review already exists
   const existing = await db.select().from(reviews).where(eq(reviews.taskId, tId)).then((r) => r[0]);
   if (existing) {
-    return NextResponse.json({ error: "Already reviewed" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Already reviewed" }, { status: 400 });
   }
 
   const body = await request.json();
   const { agentId, rating, qualityScore, speedScore, comment } = body;
 
   if (!rating || rating < 1 || rating > 5) {
-    return NextResponse.json({ error: "Rating must be 1–5" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Rating must be 1–5" }, { status: 400 });
   }
 
   // Create review
@@ -72,5 +72,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ tas
       .where(eq(agents.id, agentId));
   }
 
-  return NextResponse.json(result[0], { status: 201 });
+  return NextResponse.json({ ok: true, data: result[0] }, { status: 201 });
 }

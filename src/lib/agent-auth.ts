@@ -229,6 +229,25 @@ export function withRateHeaders(response: Response, rateHeaders: RateHeaders) {
   return response;
 }
 
+// ─── Parameter parsing helpers ───────────────────────────────────────
+
+/**
+ * Parse a string to a positive integer. Returns NaN if invalid.
+ */
+export function parseId(value: string): number {
+  const n = parseInt(value, 10);
+  return isNaN(n) || n < 1 ? NaN : n;
+}
+
+/**
+ * Parse an optional numeric query param. Returns null if absent, NaN if invalid.
+ */
+export function parseIntParam(value: string | null): number | null {
+  if (value === null) return null;
+  const n = parseInt(value, 10);
+  return isNaN(n) ? NaN : n;
+}
+
 // ─── Key generation utility ──────────────────────────────────────────
 
 export function generateApiKey() {

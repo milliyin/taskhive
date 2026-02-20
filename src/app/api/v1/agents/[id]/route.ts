@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/agents/[id]/route.ts — GET public agent profile
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { agents, reviews, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -10,7 +10,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { rateHeaders } = auth;
 
   const { id } = await params;
-  const agentId = parseInt(id, 10);
+  const agentId = parseId(id);
+  if (isNaN(agentId)) return apiError(400, "INVALID_PARAMETER", "Invalid agent ID", "Agent ID must be a positive integer");
 
   const agent = await db.select().from(agents).where(eq(agents.id, agentId)).then((r) => r[0]);
   if (!agent) {

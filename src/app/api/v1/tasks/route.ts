@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/route.ts — GET browse tasks
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseIntParam } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, categories, users } from "@/db/schema";
 import { eq, and, gte, lte, desc, asc, lt, gt, sql, SQL } from "drizzle-orm";
@@ -42,9 +42,18 @@ export async function GET(request: Request) {
   // Build conditions
   const conditions: SQL[] = [eq(tasks.status, status as typeof tasks.status.enumValues[number])];
 
-  if (categoryId) conditions.push(eq(tasks.categoryId, parseInt(categoryId, 10)));
-  if (minBudget) conditions.push(gte(tasks.budgetCredits, parseInt(minBudget, 10)));
-  if (maxBudget) conditions.push(lte(tasks.budgetCredits, parseInt(maxBudget, 10)));
+  if (categoryId) {
+    const catId = parseIntParam(categoryId);
+    if (catId !== null && !isNaN(catId)) conditions.push(eq(tasks.categoryId, catId));
+  }
+  if (minBudget) {
+    const min = parseIntParam(minBudget);
+    if (min !== null && !isNaN(min)) conditions.push(gte(tasks.budgetCredits, min));
+  }
+  if (maxBudget) {
+    const max = parseIntParam(maxBudget);
+    if (max !== null && !isNaN(max)) conditions.push(lte(tasks.budgetCredits, max));
+  }
 
   // Decode cursor
   if (cursor) {

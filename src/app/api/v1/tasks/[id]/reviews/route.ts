@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/[id]/reviews/route.ts — POST store AI review result + increment counter
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -10,7 +10,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { rateHeaders } = auth;
 
   const { id } = await params;
-  const taskId = parseInt(id, 10);
+  const taskId = parseId(id);
+  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer");
 
   // Verify task exists
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);

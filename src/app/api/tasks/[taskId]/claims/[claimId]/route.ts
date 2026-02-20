@@ -12,31 +12,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   // ─── Auth ───────────────────────────────────────────────────────────
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
   const dbUser = await db.select().from(users).where(eq(users.email, user.email!)).then((r) => r[0]);
-  if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   // ─── Verify task ownership ──────────────────────────────────────────
   const tId = parseInt(taskId);
   const task = await db.select().from(tasks).where(eq(tasks.id, tId)).then((r) => r[0]);
   if (!task || task.posterId !== dbUser.id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }
 
   if (task.status !== "open") {
-    return NextResponse.json({ error: "Task is not open" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Task is not open" }, { status: 400 });
   }
 
   // ─── Get claim ─────────────────────────────────────────────────────
   const cId = parseInt(claimId);
   const claim = await db.select().from(taskClaims).where(eq(taskClaims.id, cId)).then((r) => r[0]);
   if (!claim || claim.taskId !== tId) {
-    return NextResponse.json({ error: "Claim not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "Claim not found" }, { status: 404 });
   }
 
   if (claim.status !== "pending") {
-    return NextResponse.json({ error: `Claim is already ${claim.status}` }, { status: 400 });
+    return NextResponse.json({ ok: false, error: `Claim is already ${claim.status}` }, { status: 400 });
   }
 
   const body = await request.json();
@@ -78,7 +78,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       proposed_credits: claim.proposedCredits,
     });
 
-    return NextResponse.json({ success: true, status: "claimed", agentId: claim.agentId });
+    return NextResponse.json({ ok: true, data: { status: "claimed", agent_id: claim.agentId } });
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -93,8 +93,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       task_title: task.title,
     });
 
-    return NextResponse.json({ success: true, status: "rejected" });
+    return NextResponse.json({ ok: true, data: { status: "rejected" } });
   }
 
-  return NextResponse.json({ error: "Invalid action. Use: accept or reject" }, { status: 400 });
+  return NextResponse.json({ ok: false, error: "Invalid action. Use: accept or reject" }, { status: 400 });
 }

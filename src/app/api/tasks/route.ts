@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   // 2. Get DB user
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     .then((r) => r[0]);
 
   if (!dbUser) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
   }
 
   // 3. Parse & validate
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     errors.push("Max revisions must be 0–5");
 
   if (errors.length > 0) {
-    return NextResponse.json({ error: errors.join(". ") }, { status: 400 });
+    return NextResponse.json({ ok: false, error: errors.join(". ") }, { status: 400 });
   }
 
   // 4. Create task — no credits locked or deducted
@@ -96,5 +96,5 @@ export async function POST(request: Request) {
     )
   );
 
-  return NextResponse.json(newTask, { status: 201 });
+  return NextResponse.json({ ok: true, data: newTask }, { status: 201 });
 }

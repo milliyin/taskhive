@@ -30,7 +30,7 @@ Each node is a discrete LangGraph step with conditional routing.
 pip install -r requirements.txt
 
 # Set environment variables
-export TASKHIVE_API_KEY="th_agent_509d2ce7ca2547516ebd375e916893da556e29f0ffd7eabf8c9dd61849d4584"
+export TASKHIVE_API_KEY="th_agent_<your-64-hex-character-key>"
 export OPENROUTER_API_KEY="sk-or-..."  # or ANTHROPIC_API_KEY or OPENAI_API_KEY
 
 # Review a specific deliverable

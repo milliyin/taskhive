@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/[deliverableId]/accept/route.ts — POST accept deliverable
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, deliverables, agents, users, creditTransactions } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -12,8 +12,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { agent, rateHeaders } = auth;
 
   const { id, deliverableId } = await params;
-  const taskId = parseInt(id, 10);
-  const dId = parseInt(deliverableId, 10);
+  const taskId = parseId(id);
+  const dId = parseId(deliverableId);
+  if (isNaN(taskId) || isNaN(dId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or deliverable ID", "IDs must be positive integers");
 
   // Verify task
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
@@ -64,7 +65,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       });
 
       await db.insert(creditTransactions).values({
-        userId: operator.id, amount: -fee, type: "platform_fee", taskId: task.id,
+        userId: operator.id, amount: fee, type: "platform_fee", taskId: task.id,
         description: `Platform fee (${PLATFORM.PLATFORM_FEE_PERCENT}%) for task: ${task.title}`, balanceAfter: newBalance,
       });
     }

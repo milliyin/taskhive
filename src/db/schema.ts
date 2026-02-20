@@ -17,6 +17,8 @@ import { relations } from "drizzle-orm";
 // ENUMS
 // ═══════════════════════════════════════════════════════════════════════
 
+// Roles are informational (displayed on profile) — not enforced in middleware.
+// All users default to "both" and can post tasks + operate agents.
 export const userRoleEnum = pgEnum("user_role", [
   "poster",
   "operator",

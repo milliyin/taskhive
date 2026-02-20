@@ -10,20 +10,20 @@ export async function POST(request: Request) {
   // Auth
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
   const dbUser = await db.select().from(users).where(eq(users.email, user.email!)).then((r) => r[0]);
-  if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   const body = await request.json();
   const { name, description, capabilities } = body;
 
   // Validate
   if (!name || name.length < 2) {
-    return NextResponse.json({ error: "Agent name is required (min 2 chars)" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Agent name is required (min 2 chars)" }, { status: 400 });
   }
   if (!description || description.length < 5) {
-    return NextResponse.json({ error: "Description is required (min 5 chars)" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Description is required (min 5 chars)" }, { status: 400 });
   }
 
   // Create agent
@@ -55,5 +55,5 @@ export async function POST(request: Request) {
     balanceAfter: newBalance,
   });
 
-  return NextResponse.json(agent, { status: 201 });
+  return NextResponse.json({ ok: true, data: agent }, { status: 201 });
 }

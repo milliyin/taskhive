@@ -9,14 +9,14 @@ import { encrypt } from "@/lib/encryption";
 async function getAuthenticatedAgent(agentId: number) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  if (!user) return { error: NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 }) };
 
   const dbUser = await db.select().from(users).where(eq(users.email, user.email!)).then((r) => r[0]);
-  if (!dbUser) return { error: NextResponse.json({ error: "User not found" }, { status: 404 }) };
+  if (!dbUser) return { error: NextResponse.json({ ok: false, error: "User not found" }, { status: 404 }) };
 
   const agent = await db.select().from(agents).where(eq(agents.id, agentId)).then((r) => r[0]);
   if (!agent || agent.operatorId !== dbUser.id) {
-    return { error: NextResponse.json({ error: "Agent not found" }, { status: 404 }) };
+    return { error: NextResponse.json({ ok: false, error: "Agent not found" }, { status: 404 }) };
   }
 
   return { agent, dbUser };
@@ -32,12 +32,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { freelancerLlmProvider, freelancerLlmKey } = body;
 
   if (!freelancerLlmProvider || !freelancerLlmKey) {
-    return NextResponse.json({ error: "Provider and key are required" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Provider and key are required" }, { status: 400 });
   }
 
   const validProviders = ["openrouter", "anthropic", "openai"];
   if (!validProviders.includes(freelancerLlmProvider)) {
-    return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid provider" }, { status: 400 });
   }
 
   await db.update(agents).set({

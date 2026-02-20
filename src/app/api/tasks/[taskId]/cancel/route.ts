@@ -10,21 +10,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ tas
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
   const dbUser = await db.select().from(users).where(eq(users.email, user.email!)).then((r) => r[0]);
-  if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   const tId = parseInt(taskId);
   const task = await db.select().from(tasks).where(eq(tasks.id, tId)).then((r) => r[0]);
 
   if (!task || task.posterId !== dbUser.id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }
 
   if (!["open", "claimed"].includes(task.status)) {
     return NextResponse.json(
-      { error: `Cannot cancel task in '${task.status}' status` },
+      { ok: false, error: `Cannot cancel task in '${task.status}' status` },
       { status: 400 }
     );
   }
@@ -46,5 +46,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ tas
     .set({ status: "rejected" })
     .where(and(eq(taskClaims.taskId, tId), eq(taskClaims.status, "accepted")));
 
-  return NextResponse.json({ success: true, status: "cancelled" });
+  return NextResponse.json({ ok: true, data: { status: "cancelled" } });
 }

@@ -13,29 +13,29 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   // ─── Auth ───────────────────────────────────────────────────────────
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
   const dbUser = await db.select().from(users).where(eq(users.email, user.email!)).then((r) => r[0]);
-  if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   // ─── Verify task ownership ──────────────────────────────────────────
   const task = await db.select().from(tasks).where(eq(tasks.id, parseInt(taskId))).then((r) => r[0]);
   if (!task || task.posterId !== dbUser.id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }
 
   if (task.status !== "delivered") {
-    return NextResponse.json({ error: "Task is not in delivered state" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Task is not in delivered state" }, { status: 400 });
   }
 
   // ─── Get deliverable ───────────────────────────────────────────────
   const dId = parseInt(deliverableId);
   const deliverable = await db.select().from(deliverables).where(eq(deliverables.id, dId)).then((r) => r[0]);
   if (!deliverable || deliverable.taskId !== task.id) {
-    return NextResponse.json({ error: "Deliverable not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "Deliverable not found" }, { status: 404 });
   }
   if (deliverable.status !== "submitted") {
-    return NextResponse.json({ error: "Deliverable is not in submitted state" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Deliverable is not in submitted state" }, { status: 400 });
   }
 
   const body = await request.json();
@@ -86,7 +86,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
         // Log platform fee (tracking only)
         await db.insert(creditTransactions).values({
           userId: operator.id,
-          amount: -fee,
+          amount: fee,
           type: "platform_fee",
           taskId: task.id,
           description: `Platform fee (${PLATFORM.PLATFORM_FEE_PERCENT}%) for task: ${task.title}`,
@@ -108,7 +108,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       payment: task.budgetCredits - Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100),
     });
 
-    return NextResponse.json({ success: true, status: "completed" });
+    return NextResponse.json({ ok: true, data: { status: "completed" } });
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -117,14 +117,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   if (action === "revision") {
     if (revisionsExhausted) {
       return NextResponse.json(
-        { error: "Max revisions exhausted. You can only accept or reject." },
+        { ok: false, error: "Max revisions exhausted. You can only accept or reject." },
         { status: 400 }
       );
     }
 
     if (!revisionNotes || !revisionNotes.trim()) {
       return NextResponse.json(
-        { error: "Revision notes are required" },
+        { ok: false, error: "Revision notes are required" },
         { status: 400 }
       );
     }
@@ -146,7 +146,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       revision_notes: revisionNotes,
     });
 
-    return NextResponse.json({ success: true, status: "in_progress" });
+    return NextResponse.json({ ok: true, data: { status: "in_progress" } });
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -155,7 +155,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   if (action === "reject") {
     if (!revisionsExhausted) {
       return NextResponse.json(
-        { error: "Cannot reject until max revisions are exhausted. Request a revision instead." },
+        { ok: false, error: "Cannot reject until max revisions are exhausted. Request a revision instead." },
         { status: 400 }
       );
     }
@@ -166,8 +166,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       .set({ status: "disputed", updatedAt: new Date() })
       .where(eq(tasks.id, task.id));
 
-    return NextResponse.json({ success: true, status: "disputed" });
+    return NextResponse.json({ ok: true, data: { status: "disputed" } });
   }
 
-  return NextResponse.json({ error: "Invalid action. Use: accept, revision, or reject" }, { status: 400 });
+  return NextResponse.json({ ok: false, error: "Invalid action. Use: accept, revision, or reject" }, { status: 400 });
 }

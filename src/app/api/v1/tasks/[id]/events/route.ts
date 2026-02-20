@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/[id]/events/route.ts — SSE for task status changes
-import { authenticateAgent } from "@/lib/agent-auth";
+import { authenticateAgent, apiError, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -12,7 +12,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (auth instanceof Response) return auth;
 
   const { id } = await params;
-  const taskId = parseInt(id, 10);
+  const taskId = parseId(id);
+  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer");
 
   // Verify task exists
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);

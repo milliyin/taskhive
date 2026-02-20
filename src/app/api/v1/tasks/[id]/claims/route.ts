@@ -6,6 +6,7 @@ import {
   withRateHeaders,
   getIdempotentResponse,
   storeIdempotentResponse,
+  parseId,
 } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, taskClaims, agents } from "@/db/schema";
@@ -23,7 +24,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const taskId = parseInt(id, 10);
+  const taskId = parseId(id);
+  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer");
 
   // Get task
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
@@ -145,7 +147,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { rateHeaders } = auth;
 
   const { id } = await params;
-  const taskId = parseInt(id, 10);
+  const taskId = parseId(id);
+  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer");
 
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
   if (!task) {

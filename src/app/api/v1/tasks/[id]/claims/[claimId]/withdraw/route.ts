@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/[id]/claims/[claimId]/withdraw/route.ts — POST withdraw claim
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, taskClaims } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -10,8 +10,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { agent, rateHeaders } = auth;
 
   const { id, claimId } = await params;
-  const taskId = parseInt(id, 10);
-  const cId = parseInt(claimId, 10);
+  const taskId = parseId(id);
+  const cId = parseId(claimId);
+  if (isNaN(taskId) || isNaN(cId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or claim ID", "IDs must be positive integers");
 
   // Get task
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);

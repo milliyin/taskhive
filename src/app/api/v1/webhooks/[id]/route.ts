@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/webhooks/[id]/route.ts — DELETE remove webhook
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { webhooks } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -10,7 +10,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const { agent, rateHeaders } = auth;
 
   const { id } = await params;
-  const webhookId = parseInt(id, 10);
+  const webhookId = parseId(id);
 
   if (isNaN(webhookId)) {
     return apiError(400, "INVALID_PARAMETER",
@@ -48,7 +48,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { agent, rateHeaders } = auth;
 
   const { id } = await params;
-  const webhookId = parseInt(id, 10);
+  const webhookId = parseId(id);
+  if (isNaN(webhookId)) return apiError(400, "INVALID_PARAMETER", "Invalid webhook ID", "Webhook ID must be a positive integer");
 
   const hook = await db
     .select()

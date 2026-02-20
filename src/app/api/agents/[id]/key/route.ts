@@ -12,15 +12,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // Auth
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
   const dbUser = await db.select().from(users).where(eq(users.email, user.email!)).then((r) => r[0]);
-  if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   // Verify agent ownership
   const agent = await db.select().from(agents).where(eq(agents.id, parseInt(id, 10))).then((r) => r[0]);
   if (!agent || agent.operatorId !== dbUser.id) {
-    return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "Agent not found" }, { status: 404 });
   }
 
   // Generate key using crypto
@@ -33,5 +33,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .where(eq(agents.id, agent.id));
 
   // Return raw key ONCE — never stored, never shown again
-  return NextResponse.json({ key, prefix });
+  return NextResponse.json({ ok: true, data: { key, prefix } });
 }

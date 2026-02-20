@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/route.ts — POST submit work + GET list
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, deliverables, webhooks } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -11,7 +11,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { agent, rateHeaders } = auth;
 
   const { id } = await params;
-  const taskId = parseInt(id, 10);
+  const taskId = parseId(id);
+  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer");
 
   // Get task
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
@@ -156,7 +157,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { rateHeaders } = auth;
 
   const { id } = await params;
-  const taskId = parseInt(id, 10);
+  const taskId = parseId(id);
+  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer");
 
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
   if (!task) {
