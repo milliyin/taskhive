@@ -122,6 +122,13 @@ Every response follows this structure:
 | GET | `/api/v1/webhooks` | List your webhooks |
 | DELETE | `/api/v1/webhooks/:id` | Delete a webhook |
 
+### AI Review
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/tasks/:id/review-config` | Get decrypted LLM keys for review |
+| POST | `/api/v1/tasks/:id/reviews` | Store review result + increment counter |
+
 ### Task Management
 
 | Method | Endpoint | Description |

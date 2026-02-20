@@ -17,6 +17,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [autoReview, setAutoReview] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,7 +25,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const data = {
+    const data: Record<string, unknown> = {
       title: formData.get("title") as string,
       description: formData.get("description") as string,
       budgetCredits: parseInt(formData.get("budgetCredits") as string, 10),
@@ -33,18 +34,31 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
       maxRevisions: parseInt(formData.get("maxRevisions") as string, 10) || 2,
     };
 
+    // Auto-review fields
+    if (autoReview) {
+      data.autoReviewEnabled = true;
+      data.posterLlmProvider = (formData.get("posterLlmProvider") as string) || null;
+      data.posterLlmKey = (formData.get("posterLlmKey") as string) || null;
+      const maxReviews = formData.get("posterMaxReviews") as string;
+      data.posterMaxReviews = maxReviews ? parseInt(maxReviews, 10) : null;
+    }
+
     // Client-side validation
     const newErrors: Record<string, string> = {};
-    if (!data.title || data.title.length < 5 || data.title.length > 200)
+    if (!data.title || (data.title as string).length < 5 || (data.title as string).length > 200)
       newErrors.title = "Title must be 5–200 characters";
-    if (!data.description || data.description.length < 20 || data.description.length > 5000)
+    if (!data.description || (data.description as string).length < 20 || (data.description as string).length > 5000)
       newErrors.description = "Description must be 20–5000 characters";
-    if (!data.budgetCredits || data.budgetCredits < 10)
+    if (!data.budgetCredits || (data.budgetCredits as number) < 10)
       newErrors.budgetCredits = "Budget must be at least 10 credits";
-    if (data.deadline && new Date(data.deadline) <= new Date())
+    if (data.deadline && new Date(data.deadline as string) <= new Date())
       newErrors.deadline = "Deadline must be in the future";
-    if (data.maxRevisions < 0 || data.maxRevisions > 5)
+    if ((data.maxRevisions as number) < 0 || (data.maxRevisions as number) > 5)
       newErrors.maxRevisions = "Max revisions must be 0–5";
+    if (autoReview && !data.posterLlmProvider)
+      newErrors.posterLlmProvider = "Select an LLM provider";
+    if (autoReview && !data.posterLlmKey)
+      newErrors.posterLlmKey = "API key is required for AI review";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -70,6 +84,8 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
     router.refresh();
   }
 
+  const inputClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900";
+
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-xl space-y-5">
       {errors.form && (
@@ -86,7 +102,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
           required
           minLength={5}
           maxLength={200}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+          className={inputClass}
           placeholder="e.g. Write a Python web scraper for product prices"
         />
         {errors.title && (
@@ -103,7 +119,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
           minLength={20}
           maxLength={5000}
           rows={5}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+          className={inputClass}
           placeholder="Describe exactly what you need done, including requirements and expected output..."
         />
         {errors.description && (
@@ -122,7 +138,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
             type="number"
             required
             min={10}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className={inputClass}
             placeholder="Min 10"
           />
           {errors.budgetCredits && (
@@ -134,7 +150,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
           <label className="mb-1 block text-sm font-medium">Category</label>
           <select
             name="categoryId"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className={inputClass}
           >
             <option value="">Select category</option>
             {categories.map((cat) => (
@@ -153,7 +169,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
           <input
             name="deadline"
             type="datetime-local"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className={inputClass}
           />
           {errors.deadline && (
             <p className="mt-1 text-xs text-red-600">{errors.deadline}</p>
@@ -170,12 +186,75 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
             min={0}
             max={5}
             defaultValue={2}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className={inputClass}
           />
           {errors.maxRevisions && (
             <p className="mt-1 text-xs text-red-600">{errors.maxRevisions}</p>
           )}
         </div>
+      </div>
+
+      {/* ─── AI Review Section ──────────────────────────────────── */}
+      <div className="rounded-lg border border-gray-200 p-4">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={autoReview}
+            onChange={(e) => setAutoReview(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          <span className="text-sm font-medium">Enable AI Review</span>
+        </label>
+        <p className="mt-1 text-xs text-gray-500">
+          Automatically evaluate submissions with an LLM. You provide the API key — you control the cost.
+        </p>
+
+        {autoReview && (
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium">LLM Provider *</label>
+              <select name="posterLlmProvider" className={inputClass}>
+                <option value="">Select provider</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="openai">OpenAI</option>
+              </select>
+              {errors.posterLlmProvider && (
+                <p className="mt-1 text-xs text-red-600">{errors.posterLlmProvider}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">API Key *</label>
+              <input
+                name="posterLlmKey"
+                type="password"
+                className={inputClass}
+                placeholder="sk-... or sk-or-v1-..."
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Encrypted at rest. Never visible in API responses.
+              </p>
+              {errors.posterLlmKey && (
+                <p className="mt-1 text-xs text-red-600">{errors.posterLlmKey}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">Max Reviews</label>
+              <input
+                name="posterMaxReviews"
+                type="number"
+                min={1}
+                className={inputClass}
+                placeholder="Leave empty for unlimited"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Cap how many AI reviews you pay for. After this limit, the freelancer can continue with their own key.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <button

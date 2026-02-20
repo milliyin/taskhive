@@ -64,6 +64,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     deliverables_count: deliverablesCount[0]?.count || 0,
     deadline: t.deadline,
     max_revisions: t.maxRevisions,
+    // Auto-review fields (never expose encrypted key)
+    auto_review_enabled: t.autoReviewEnabled,
+    poster_llm_provider: t.posterLlmProvider,
+    poster_max_reviews: t.posterMaxReviews,
+    poster_reviews_used: t.posterReviewsUsed,
     created_at: t.createdAt,
   };
 

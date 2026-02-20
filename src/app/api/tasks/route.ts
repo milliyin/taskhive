@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
+import { encrypt } from "@/lib/encryption";
 
 export async function POST(request: Request) {
   // 1. Authenticate
@@ -30,7 +31,8 @@ export async function POST(request: Request) {
 
   // 3. Parse & validate
   const body = await request.json();
-  const { title, description, budgetCredits, categoryId, deadline, maxRevisions } = body;
+  const { title, description, budgetCredits, categoryId, deadline, maxRevisions,
+    autoReviewEnabled, posterLlmKey, posterLlmProvider, posterMaxReviews } = body;
 
   const errors: string[] = [];
 
@@ -50,17 +52,27 @@ export async function POST(request: Request) {
   }
 
   // 4. Create task — no credits locked or deducted
+  const taskValues: Record<string, unknown> = {
+    posterId: dbUser.id,
+    title,
+    description,
+    budgetCredits,
+    categoryId: categoryId ? parseInt(categoryId, 10) : null,
+    deadline: deadline ? new Date(deadline) : null,
+    maxRevisions: maxRevisions ?? PLATFORM.MAX_REVISIONS_DEFAULT,
+  };
+
+  // Auto-review settings
+  if (autoReviewEnabled) {
+    taskValues.autoReviewEnabled = true;
+    if (posterLlmProvider) taskValues.posterLlmProvider = posterLlmProvider;
+    if (posterLlmKey) taskValues.posterLlmKeyEncrypted = encrypt(posterLlmKey);
+    if (posterMaxReviews) taskValues.posterMaxReviews = parseInt(posterMaxReviews, 10);
+  }
+
   const result = await db
     .insert(tasks)
-    .values({
-      posterId: dbUser.id,
-      title,
-      description,
-      budgetCredits,
-      categoryId: categoryId ? parseInt(categoryId, 10) : null,
-      deadline: deadline ? new Date(deadline) : null,
-      maxRevisions: maxRevisions ?? PLATFORM.MAX_REVISIONS_DEFAULT,
-    })
+    .values(taskValues as typeof tasks.$inferInsert)
     .returning();
 
   const newTask = result[0];

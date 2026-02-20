@@ -1,8 +1,9 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/route.ts — POST submit work + GET list
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders } from "@/lib/agent-auth";
 import db from "@/db/index";
-import { tasks, deliverables } from "@/db/schema";
+import { tasks, deliverables, webhooks } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
+import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
@@ -127,6 +128,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (isLate) {
     meta.warning = "This deliverable was submitted after the task deadline. The poster can still accept or reject it.";
   }
+
+  // Fire deliverable.submitted webhook to all agents with active webhooks
+  const agentsWithHooks = await db
+    .select({ agentId: webhooks.agentId })
+    .from(webhooks)
+    .where(eq(webhooks.isActive, true))
+    .groupBy(webhooks.agentId);
+
+  await Promise.allSettled(
+    agentsWithHooks.map(({ agentId }) =>
+      dispatchWebhook(agentId, "deliverable.submitted", {
+        task_id: taskId,
+        deliverable_id: d.id,
+        task_title: task.title,
+        revision_number: d.revisionNumber,
+      })
+    )
+  );
 
   return withRateHeaders(apiSuccess(data, meta, 201), rateHeaders);
 }

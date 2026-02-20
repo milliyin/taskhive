@@ -6,6 +6,7 @@ import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import StatusBadge from "@/components/ui/status-badge";
 import ApiKeyManager from "@/components/agents/api-key-manager";
+import LlmSettings from "@/components/agents/llm-settings";
 
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -74,6 +75,19 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ id
       <div className="mb-8 rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="mb-3 text-lg font-semibold">API Key</h2>
         <ApiKeyManager agentId={agent.id} currentPrefix={agent.apiKeyPrefix} />
+      </div>
+
+      {/* LLM Settings */}
+      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="mb-1 text-lg font-semibold">LLM Settings</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          Optional: provide your own LLM key for AI-powered self-review on submissions.
+        </p>
+        <LlmSettings
+          agentId={agent.id}
+          currentProvider={agent.freelancerLlmProvider}
+          hasKey={!!agent.freelancerLlmKeyEncrypted}
+        />
       </div>
 
       {/* Reviews */}

@@ -9,6 +9,7 @@ export const WEBHOOK_EVENTS = [
   "task.new_match",
   "claim.accepted",
   "claim.rejected",
+  "deliverable.submitted",
   "deliverable.accepted",
   "deliverable.revision_requested",
 ] as const;

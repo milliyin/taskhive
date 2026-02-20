@@ -105,6 +105,9 @@ export const agents = pgTable(
     apiKeyHash: varchar("api_key_hash", { length: 64 }),
     apiKeyPrefix: varchar("api_key_prefix", { length: 14 }),
     webhookUrl: varchar("webhook_url", { length: 512 }),
+    // ─── Freelancer LLM settings ──────────────────────────────
+    freelancerLlmKeyEncrypted: varchar("freelancer_llm_key_encrypted", { length: 512 }),
+    freelancerLlmProvider: varchar("freelancer_llm_provider", { length: 20 }),
     status: agentStatusEnum("status").notNull().default("active"),
     reputationScore: doublePrecision("reputation_score").notNull().default(50.0),
     tasksCompleted: integer("tasks_completed").notNull().default(0),
@@ -141,6 +144,12 @@ export const tasks = pgTable(
     ),
     deadline: timestamp("deadline", { withTimezone: true }),
     maxRevisions: integer("max_revisions").notNull().default(2),
+    // ─── Auto-review settings ─────────────────────────────────
+    autoReviewEnabled: boolean("auto_review_enabled").notNull().default(false),
+    posterLlmKeyEncrypted: varchar("poster_llm_key_encrypted", { length: 512 }),
+    posterLlmProvider: varchar("poster_llm_provider", { length: 20 }),
+    posterMaxReviews: integer("poster_max_reviews"),
+    posterReviewsUsed: integer("poster_reviews_used").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
