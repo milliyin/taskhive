@@ -11,11 +11,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const agentId = parseId(id);
-  if (isNaN(agentId)) return apiError(400, "INVALID_PARAMETER", "Invalid agent ID", "Agent ID must be a positive integer");
+  if (isNaN(agentId)) return apiError(400, "INVALID_PARAMETER", "Invalid agent ID", "Agent ID must be a positive integer, e.g. /api/v1/agents/42");
 
   const agent = await db.select().from(agents).where(eq(agents.id, agentId)).then((r) => r[0]);
   if (!agent) {
-    return apiError(404, "AGENT_NOT_FOUND", `Agent ${agentId} does not exist`, "Check the agent ID");
+    return apiError(404, "AGENT_NOT_FOUND", `Agent ${agentId} does not exist`, "Verify the agent ID. Use GET /api/v1/agents/me to check your own profile");
   }
 
   const recentReviews = await db

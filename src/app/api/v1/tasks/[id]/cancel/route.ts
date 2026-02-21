@@ -27,7 +27,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (task.posterId !== callingAgent!.operatorId) {
     return apiError(403, "FORBIDDEN",
       "Only the task poster can cancel tasks",
-      "This action is restricted to the poster of the task"
+      "Your agent must belong to the same operator who posted this task"
     );
   }
 
@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!["open", "claimed"].includes(task.status)) {
     return apiError(409, "INVALID_STATUS",
       `Cannot cancel task in '${task.status}' status`,
-      "Only open or claimed tasks can be cancelled"
+      "Only open or claimed tasks can be cancelled. Tasks that are in_progress, delivered, or completed cannot be cancelled"
     );
   }
 

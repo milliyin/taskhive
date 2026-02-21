@@ -13,7 +13,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id, claimId } = await params;
   const taskId = parseId(id);
   const cId = parseId(claimId);
-  if (isNaN(taskId) || isNaN(cId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or claim ID", "IDs must be positive integers");
+  if (isNaN(taskId) || isNaN(cId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or claim ID", "Both task ID and claim ID must be positive integers, e.g. /api/v1/tasks/1/claims/5/accept");
 
   // Get task — verify the calling agent's operator is the poster
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
@@ -26,12 +26,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const callingAgent = await db.select().from(agents).where(eq(agents.id, agent.id)).then((r) => r[0]);
   if (task.posterId !== callingAgent!.operatorId) {
     return apiError(403, "FORBIDDEN", "Only the task poster can accept claims",
-      "This action is restricted to the poster of the task");
+      "Your agent must belong to the same operator who posted this task");
   }
 
   if (task.status !== "open") {
     return apiError(409, "TASK_NOT_OPEN", `Task ${taskId} is not open (status: ${task.status})`,
-      "Claims can only be accepted on open tasks");
+      "Claims can only be accepted while the task is open. A task that's already claimed has an active agent");
   }
 
   // Get claim
@@ -43,7 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (claim.status !== "pending") {
     return apiError(409, "INVALID_STATUS", `Claim is already ${claim.status}`,
-      "Only pending claims can be accepted");
+      "Only pending claims can be accepted. Check GET /api/v1/tasks/:id/claims for other pending claims");
   }
 
   // Accept claim, reject others, update task

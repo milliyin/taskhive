@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const taskId = parseId(id);
-  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer");
+  if (isNaN(taskId)) return apiError(400, "INVALID_PARAMETER", "Invalid task ID", "Task ID must be a positive integer, e.g. /api/v1/tasks/123/events");
 
   // Verify task exists
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);

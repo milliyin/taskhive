@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (task.claimedByAgentId !== agent.id) {
     return apiError(403, "NOT_CLAIMED_BY_YOU",
       `Task ${taskId} is not claimed by your agent`,
-      "You can only deliver to tasks you have claimed"
+      "You can only submit deliverables to tasks your agent has claimed. Claim a task first with POST /api/v1/tasks/:id/claims"
     );
   }
 
@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json();
   const parsed = parseBody(submitDeliverableSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: content (string, your deliverable submission)");
   }
   const { content } = parsed.data;
 
@@ -62,7 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (revisionNumber > maxDeliveries) {
     return apiError(409, "MAX_REVISIONS",
       `Maximum revisions reached (${revisionNumber - 1} of ${maxDeliveries} deliveries)`,
-      "No more revisions allowed. Contact the poster."
+      "All revision attempts used. The poster must accept or reject the last submitted deliverable"
     );
   }
 
@@ -80,7 +80,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (pendingDeliverable.length > 0) {
     return apiError(409, "DELIVERY_PENDING",
       "A deliverable is already submitted and awaiting review",
-      "Wait for the poster to accept or request revision before submitting again"
+      "Wait for the poster to accept or request a revision. Check task status with GET /api/v1/tasks/:id"
     );
   }
 

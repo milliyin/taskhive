@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   if (isNaN(limitParam) || limitParam < 1 || limitParam > 100) {
     return apiError(400, "INVALID_PARAMETER",
       "limit must be between 1 and 100",
-      "Use limit=20 for default page size",
+      "Omit the limit parameter to use the default (20), or set ?limit=50 for larger pages",
       rateHeaders
     );
   }
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     } catch {
       return apiError(400, "INVALID_PARAMETER",
         "Invalid cursor",
-        "Use the cursor value from a previous response",
+        "Do not construct cursors manually. Use the meta.cursor value from a previous GET /api/v1/tasks response",
         rateHeaders
       );
     }
@@ -163,33 +163,33 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = parseBody(createTaskV1Schema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body", rateHeaders);
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: title (5-200 chars), description (20-5000 chars), budget_credits (integer). Optional: category_id, requirements, deadline (ISO 8601), max_revisions (0-5)", rateHeaders);
   }
 
   const { title, description, budget_credits, category_id, requirements, deadline, max_revisions } = parsed.data;
 
   // Validate deadline is in the future
   if (deadline && new Date(deadline) <= new Date()) {
-    return apiError(422, "INVALID_DEADLINE", "Deadline must be in the future", "Provide a future ISO 8601 date string", rateHeaders);
+    return apiError(422, "INVALID_DEADLINE", "Deadline must be in the future", "Use a future ISO 8601 date, e.g. \"2025-12-31T23:59:59Z\"", rateHeaders);
   }
 
   // Validate category exists (if provided)
   if (category_id) {
     const cat = await db.select({ id: categories.id }).from(categories).where(eq(categories.id, category_id)).then((r) => r[0]);
     if (!cat) {
-      return apiError(404, "CATEGORY_NOT_FOUND", `Category ${category_id} does not exist`, "Use a valid category ID", rateHeaders);
+      return apiError(404, "CATEGORY_NOT_FOUND", `Category ${category_id} does not exist`, "Omit category_id to post without a category, or check available categories on the dashboard", rateHeaders);
     }
   }
 
   // Check operator's credit balance
   const operator = await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]);
   if (!operator) {
-    return apiError(404, "USER_NOT_FOUND", "Agent operator not found", "Contact support", rateHeaders);
+    return apiError(404, "USER_NOT_FOUND", "Agent operator not found", "Your agent's operator account may have been deleted. Contact support via the dashboard", rateHeaders);
   }
   if (operator.creditBalance < budget_credits) {
     return apiError(422, "INSUFFICIENT_CREDITS",
       `Insufficient credits. Balance: ${operator.creditBalance}, required: ${budget_credits}`,
-      "Top up credits or reduce the budget",
+      "Top up credits on the dashboard or reduce budget_credits to fit your balance",
       rateHeaders
     );
   }

@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/[deliverableId]/accept/route.ts — POST accept deliverable
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId, isReviewerAgent } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, deliverables, agents, users, creditTransactions } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -14,30 +14,32 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id, deliverableId } = await params;
   const taskId = parseId(id);
   const dId = parseId(deliverableId);
-  if (isNaN(taskId) || isNaN(dId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or deliverable ID", "IDs must be positive integers");
+  if (isNaN(taskId) || isNaN(dId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or deliverable ID", "Both task ID and deliverable ID must be positive integers");
 
   // Verify task
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
-  if (!task) return apiError(404, "TASK_NOT_FOUND", `Task ${taskId} does not exist`, "Use GET /api/v1/tasks to browse");
+  if (!task) return apiError(404, "TASK_NOT_FOUND", `Task ${taskId} does not exist`, "Verify the task ID. Use GET /api/v1/tasks to browse available tasks");
 
-  // Verify poster
-  const callingAgent = await db.select().from(agents).where(eq(agents.id, agent.id)).then((r) => r[0]);
-  if (task.posterId !== callingAgent!.operatorId) {
-    return apiError(403, "FORBIDDEN", "Only the task poster can accept deliverables", "Restricted to task poster");
+  // Verify poster or reviewer agent
+  if (!isReviewerAgent(agent.id)) {
+    const callingAgent = await db.select().from(agents).where(eq(agents.id, agent.id)).then((r) => r[0]);
+    if (task.posterId !== callingAgent!.operatorId) {
+      return apiError(403, "FORBIDDEN", "Only the task poster or reviewer agent can accept deliverables", "Your agent must belong to the task poster's operator, or be the designated reviewer agent");
+    }
   }
 
   if (task.status !== "delivered") {
-    return apiError(409, "INVALID_STATUS", `Task is not in delivered state (status: ${task.status})`, "Wait for agent to submit");
+    return apiError(409, "INVALID_STATUS", `Task is not in delivered state (status: ${task.status})`, "The agent must submit a deliverable first. Monitor task status with GET /api/v1/tasks/:id");
   }
 
   // Get deliverable
   const del = await db.select().from(deliverables).where(eq(deliverables.id, dId)).then((r) => r[0]);
   if (!del || del.taskId !== taskId) {
-    return apiError(404, "DELIVERABLE_NOT_FOUND", `Deliverable ${dId} not found`, `Use GET /api/v1/tasks/${taskId}/deliverables`);
+    return apiError(404, "DELIVERABLE_NOT_FOUND", `Deliverable ${dId} not found`, `List deliverables with GET /api/v1/tasks/${taskId}/deliverables to find the correct ID`);
   }
 
   if (del.status !== "submitted") {
-    return apiError(409, "INVALID_STATUS", `Deliverable is ${del.status}`, "Only submitted deliverables can be accepted");
+    return apiError(409, "INVALID_STATUS", `Deliverable is ${del.status}`, "Only deliverables with status 'submitted' can be accepted. Check the latest submission");
   }
 
   // 1. Deliverable → accepted

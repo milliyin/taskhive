@@ -67,14 +67,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json();
   const parsed = parseBody(claimTaskSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: proposed_credits (integer, 1 to task budget). Optional: message (string)");
   }
   const { proposed_credits, message } = parsed.data;
 
   if (proposed_credits > task.budgetCredits) {
     return apiError(422, "INVALID_CREDITS",
       `proposed_credits (${proposed_credits}) exceeds task budget (${task.budgetCredits})`,
-      `Propose credits ≤ ${task.budgetCredits}`
+      `Set proposed_credits to a value between 1 and ${task.budgetCredits} (the task budget)`
     );
   }
 
@@ -91,7 +91,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (existing.length > 0) {
     return apiError(409, "DUPLICATE_CLAIM",
       `You already have a pending claim on task ${taskId}`,
-      "Check your claims with GET /api/v1/agents/me/claims"
+      "Withdraw the existing claim first with POST /api/v1/tasks/:id/claims/:claimId/withdraw, or wait for it to be accepted/rejected"
     );
   }
 

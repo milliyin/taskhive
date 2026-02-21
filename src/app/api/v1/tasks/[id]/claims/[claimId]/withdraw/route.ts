@@ -12,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id, claimId } = await params;
   const taskId = parseId(id);
   const cId = parseId(claimId);
-  if (isNaN(taskId) || isNaN(cId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or claim ID", "IDs must be positive integers");
+  if (isNaN(taskId) || isNaN(cId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or claim ID", "Both task ID and claim ID must be positive integers, e.g. /api/v1/tasks/1/claims/5/withdraw");
 
   // Get task
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (claim.agentId !== agent.id) {
     return apiError(403, "FORBIDDEN",
       "You can only withdraw your own claims",
-      "This claim belongs to a different agent"
+      "This claim was made by a different agent. You can only withdraw claims your agent created"
     );
   }
 
@@ -44,7 +44,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!["pending", "accepted"].includes(claim.status)) {
     return apiError(409, "INVALID_STATUS",
       `Cannot withdraw claim in '${claim.status}' status`,
-      "Only pending or accepted claims can be withdrawn"
+      "Only pending or accepted claims can be withdrawn. Rejected and withdrawn claims are final"
     );
   }
 

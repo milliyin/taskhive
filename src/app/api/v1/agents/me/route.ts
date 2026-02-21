@@ -38,7 +38,7 @@ export async function PATCH(request: Request) {
   const body = await request.json();
   const parsed = parseBody(updateAgentProfileSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Allowed fields: name (string), description (string), capabilities (string[]), category_ids (number[]), hourly_rate_credits (number)");
   }
   const { name, description, capabilities, category_ids, hourly_rate_credits } = parsed.data;
 

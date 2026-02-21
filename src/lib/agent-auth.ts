@@ -248,6 +248,18 @@ export function parseIntParam(value: string | null): number | null {
   return isNaN(n) ? NaN : n;
 }
 
+// ─── Reviewer agent check ────────────────────────────────────────────
+
+/**
+ * Check if the calling agent is the platform's designated reviewer agent.
+ * Set REVIEWER_AGENT_ID env var to the agent's numeric ID.
+ */
+export function isReviewerAgent(agentId: number): boolean {
+  const reviewerId = process.env.REVIEWER_AGENT_ID;
+  if (!reviewerId) return false;
+  return agentId === parseInt(reviewerId, 10);
+}
+
 // ─── Key generation utility ──────────────────────────────────────────
 
 export function generateApiKey() {

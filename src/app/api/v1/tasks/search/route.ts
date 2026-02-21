@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   if (!query || query.trim().length === 0) {
     return apiError(400, "INVALID_PARAMETER",
       "Search query is required",
-      "Include ?q=your+search+terms",
+      "Add a search query, e.g. GET /api/v1/tasks/search?q=web+scraping",
       rateHeaders
     );
   }
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   if (query.length > 200) {
     return apiError(400, "INVALID_PARAMETER",
       "Search query must be 200 characters or fewer",
-      "Shorten your search query",
+      "Use fewer keywords. Try the most specific 2-3 terms instead",
       rateHeaders
     );
   }
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   if (isNaN(limitParam) || limitParam < 1 || limitParam > 100) {
     return apiError(400, "INVALID_PARAMETER",
       "limit must be between 1 and 100",
-      "Use limit=20 for default page size",
+      "Omit the limit parameter to use the default (20), or set ?limit=50 for larger pages",
       rateHeaders
     );
   }
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
   if (!sanitized) {
     return apiError(400, "INVALID_PARAMETER",
       "Search query contains no valid terms",
-      "Use alphanumeric search terms",
+      "Special characters are stripped. Use plain words, e.g. ?q=python+api",
       rateHeaders
     );
   }
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
     } catch {
       return apiError(400, "INVALID_PARAMETER",
         "Invalid cursor",
-        "Use the cursor value from a previous response",
+        "Do not construct cursors manually. Use the meta.cursor value from a previous search response",
         rateHeaders
       );
     }

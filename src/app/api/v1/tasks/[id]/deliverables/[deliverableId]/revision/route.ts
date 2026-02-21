@@ -1,5 +1,5 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/[deliverableId]/revision/route.ts — POST request revision
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId, isReviewerAgent } from "@/lib/agent-auth";
 import { parseBody, requestRevisionSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks, deliverables, agents } from "@/db/schema";
@@ -14,27 +14,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id, deliverableId } = await params;
   const taskId = parseId(id);
   const dId = parseId(deliverableId);
-  if (isNaN(taskId) || isNaN(dId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or deliverable ID", "IDs must be positive integers");
+  if (isNaN(taskId) || isNaN(dId)) return apiError(400, "INVALID_PARAMETER", "Invalid task or deliverable ID", "Both task ID and deliverable ID must be positive integers");
 
   const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).then((r) => r[0]);
-  if (!task) return apiError(404, "TASK_NOT_FOUND", `Task ${taskId} does not exist`, "Use GET /api/v1/tasks");
+  if (!task) return apiError(404, "TASK_NOT_FOUND", `Task ${taskId} does not exist`, "Verify the task ID. Use GET /api/v1/tasks to browse available tasks");
 
-  const callingAgent = await db.select().from(agents).where(eq(agents.id, agent.id)).then((r) => r[0]);
-  if (task.posterId !== callingAgent!.operatorId) {
-    return apiError(403, "FORBIDDEN", "Only the task poster can request revisions", "Restricted to task poster");
+  if (!isReviewerAgent(agent.id)) {
+    const callingAgent = await db.select().from(agents).where(eq(agents.id, agent.id)).then((r) => r[0]);
+    if (task.posterId !== callingAgent!.operatorId) {
+      return apiError(403, "FORBIDDEN", "Only the task poster or reviewer agent can request revisions", "Your agent must belong to the task poster's operator, or be the designated reviewer agent");
+    }
   }
 
   if (task.status !== "delivered") {
-    return apiError(409, "INVALID_STATUS", `Task is not in delivered state (status: ${task.status})`, "Wait for submission");
+    return apiError(409, "INVALID_STATUS", `Task is not in delivered state (status: ${task.status})`, "The agent must submit a deliverable first. Monitor task status with GET /api/v1/tasks/:id");
   }
 
   const del = await db.select().from(deliverables).where(eq(deliverables.id, dId)).then((r) => r[0]);
   if (!del || del.taskId !== taskId) {
-    return apiError(404, "DELIVERABLE_NOT_FOUND", `Deliverable ${dId} not found`, "Check deliverables list");
+    return apiError(404, "DELIVERABLE_NOT_FOUND", `Deliverable ${dId} not found`, `List deliverables with GET /api/v1/tasks/${taskId}/deliverables to find the correct ID`);
   }
 
   if (del.status !== "submitted") {
-    return apiError(409, "INVALID_STATUS", `Deliverable is ${del.status}, not submitted`, "Only submitted deliverables can be revised");
+    return apiError(409, "INVALID_STATUS", `Deliverable is ${del.status}, not submitted`, "Only deliverables with status 'submitted' can have revisions requested");
   }
 
   // Max revisions check: revision_number must be < max_revisions + 1
@@ -42,14 +44,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (del.revisionNumber >= maxDeliveries) {
     return apiError(409, "MAX_REVISIONS",
       `Max revisions exhausted (${del.revisionNumber} of ${maxDeliveries} deliveries used)`,
-      "You must accept or reject this deliverable. No more revisions allowed."
+      "Accept this deliverable with POST .../accept or reject it. No further revision requests are allowed"
     );
   }
 
   const body = await request.json();
   const parsed = parseBody(requestRevisionSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: revision_notes (string explaining what needs to be changed)");
   }
   const { revision_notes } = parsed.data;
 
