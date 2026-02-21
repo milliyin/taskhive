@@ -76,10 +76,11 @@ export const createTaskV1Schema = z.object({
 });
 
 export const submitReviewSchema = z.object({
+  deliverable_id: z.number({ error: "deliverable_id is required" }).int().positive(),
   verdict: z.enum(["pass", "fail", "skipped"], { error: "verdict must be 'pass', 'fail', or 'skipped'" }),
   feedback: z.string().nullish(),
-  scores: z.unknown().nullish(),
-  key_source: z.string().nullish(),
+  scores: z.record(z.string(), z.unknown()).nullish(),
+  key_source: z.enum(["poster", "freelancer", "none"]).default("none"),
   llm_model_used: z.string().nullish(),
   reviewed_at: z.string().nullish(),
 });

@@ -2,13 +2,13 @@
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import { parseBody, submitReviewSchema } from "@/lib/schemas";
 import db from "@/db/index";
-import { tasks } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { tasks, deliverables, deliverableReviews } from "@/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
   if (auth instanceof Response) return auth;
-  const { rateHeaders } = auth;
+  const { agent, rateHeaders } = auth;
 
   const { id } = await params;
   const taskId = parseId(id);
@@ -25,7 +25,55 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) {
     return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
   }
-  const { verdict, feedback, scores, key_source, llm_model_used, reviewed_at } = parsed.data;
+  const { deliverable_id, verdict, feedback, scores, key_source, llm_model_used, reviewed_at } = parsed.data;
+
+  // Verify deliverable exists and belongs to this task
+  const deliverable = await db
+    .select()
+    .from(deliverables)
+    .where(and(eq(deliverables.id, deliverable_id), eq(deliverables.taskId, taskId)))
+    .then((r) => r[0]);
+
+  if (!deliverable) {
+    return apiError(404, "DELIVERABLE_NOT_FOUND",
+      `Deliverable ${deliverable_id} does not exist on task ${taskId}`,
+      "Use GET /api/v1/tasks/:id/deliverables to list deliverables"
+    );
+  }
+
+  // Check if this deliverable already has a review
+  const existing = await db
+    .select({ id: deliverableReviews.id })
+    .from(deliverableReviews)
+    .where(eq(deliverableReviews.deliverableId, deliverable_id))
+    .then((r) => r[0]);
+
+  if (existing) {
+    return apiError(409, "REVIEW_EXISTS",
+      `Deliverable ${deliverable_id} already has a review`,
+      "Each deliverable can only be reviewed once"
+    );
+  }
+
+  // Insert review
+  const reviewedAtDate = reviewed_at ? new Date(reviewed_at) : new Date();
+
+  const result = await db
+    .insert(deliverableReviews)
+    .values({
+      deliverableId: deliverable_id,
+      taskId,
+      agentId: deliverable.agentId,
+      reviewResult: verdict,
+      reviewFeedback: feedback || null,
+      reviewScores: scores || null,
+      reviewKeySource: key_source,
+      llmModelUsed: llm_model_used || null,
+      reviewedAt: reviewedAtDate,
+    })
+    .returning();
+
+  const review = result[0];
 
   // Increment poster_reviews_used if this review was charged to the poster's key
   if (key_source === "poster") {
@@ -36,13 +84,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const data = {
-    task_id: taskId,
-    verdict,
-    feedback: feedback || null,
-    scores: scores || null,
-    key_source: key_source || "none",
-    llm_model_used: llm_model_used || null,
-    reviewed_at: reviewed_at || new Date().toISOString(),
+    id: review.id,
+    deliverable_id: review.deliverableId,
+    task_id: review.taskId,
+    agent_id: review.agentId,
+    review_result: review.reviewResult,
+    review_feedback: review.reviewFeedback,
+    review_scores: review.reviewScores,
+    review_key_source: review.reviewKeySource,
+    llm_model_used: review.llmModelUsed,
+    reviewed_at: review.reviewedAt,
+    created_at: review.createdAt,
     poster_reviews_used: key_source === "poster" ? (task.posterReviewsUsed + 1) : task.posterReviewsUsed,
   };
 

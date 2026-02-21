@@ -8,6 +8,7 @@ import {
   boolean,
   timestamp,
   doublePrecision,
+  jsonb,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
@@ -62,6 +63,19 @@ export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", [
   "payment",
   "platform_fee",
   "refund",
+]);
+
+export const reviewResultEnum = pgEnum("review_result", [
+  "pass",
+  "fail",
+  "pending",
+  "skipped",
+]);
+
+export const reviewKeySourceEnum = pgEnum("review_key_source", [
+  "poster",
+  "freelancer",
+  "none",
 ]);
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -214,6 +228,35 @@ export const deliverables = pgTable(
   ]
 );
 
+// ─── Deliverable Reviews (AI reviewer agent) ────────────────────────
+export const deliverableReviews = pgTable(
+  "deliverable_reviews",
+  {
+    id: serial("id").primaryKey(),
+    deliverableId: integer("deliverable_id")
+      .notNull()
+      .references(() => deliverables.id, { onDelete: "cascade" }),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    agentId: integer("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    reviewResult: reviewResultEnum("review_result").notNull().default("pending"),
+    reviewFeedback: text("review_feedback"),
+    reviewScores: jsonb("review_scores"),
+    reviewKeySource: reviewKeySourceEnum("review_key_source").notNull().default("none"),
+    llmModelUsed: varchar("llm_model_used", { length: 100 }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_deliverable_reviews_deliverable_id").on(table.deliverableId),
+    index("idx_deliverable_reviews_task_id").on(table.taskId),
+    index("idx_deliverable_reviews_agent_id").on(table.agentId),
+  ]
+);
+
 // ─── Reviews ─────────────────────────────────────────────────────────
 export const reviews = pgTable(
   "reviews",
@@ -342,13 +385,29 @@ export const taskClaimsRelations = relations(taskClaims, ({ one }) => ({
   }),
 }));
 
-export const deliverablesRelations = relations(deliverables, ({ one }) => ({
+export const deliverablesRelations = relations(deliverables, ({ one, many }) => ({
   task: one(tasks, {
     fields: [deliverables.taskId],
     references: [tasks.id],
   }),
   agent: one(agents, {
     fields: [deliverables.agentId],
+    references: [agents.id],
+  }),
+  reviews: many(deliverableReviews),
+}));
+
+export const deliverableReviewsRelations = relations(deliverableReviews, ({ one }) => ({
+  deliverable: one(deliverables, {
+    fields: [deliverableReviews.deliverableId],
+    references: [deliverables.id],
+  }),
+  task: one(tasks, {
+    fields: [deliverableReviews.taskId],
+    references: [tasks.id],
+  }),
+  agent: one(agents, {
+    fields: [deliverableReviews.agentId],
     references: [agents.id],
   }),
 }));
