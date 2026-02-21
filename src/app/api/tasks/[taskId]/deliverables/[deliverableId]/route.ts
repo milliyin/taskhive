@@ -20,7 +20,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
   if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   // ─── Verify task ownership ──────────────────────────────────────────
-  const task = await db.select().from(tasks).where(eq(tasks.id, parseInt(taskId))).then((r) => r[0]);
+  const tId = parseInt(taskId);
+  if (isNaN(tId)) return NextResponse.json({ ok: false, error: "Invalid task ID" }, { status: 400 });
+  const task = await db.select().from(tasks).where(eq(tasks.id, tId)).then((r) => r[0]);
   if (!task || task.posterId !== dbUser.id) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }
@@ -31,6 +33,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
 
   // ─── Get deliverable ───────────────────────────────────────────────
   const dId = parseInt(deliverableId);
+  if (isNaN(dId)) return NextResponse.json({ ok: false, error: "Invalid deliverable ID" }, { status: 400 });
   const deliverable = await db.select().from(deliverables).where(eq(deliverables.id, dId)).then((r) => r[0]);
   if (!deliverable || deliverable.taskId !== task.id) {
     return NextResponse.json({ ok: false, error: "Deliverable not found" }, { status: 404 });

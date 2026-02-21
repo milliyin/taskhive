@@ -79,7 +79,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
       return;
     }
 
-    const task = await res.json();
+    const { data: task } = await res.json();
     router.push(`/tasks/${task.id}`);
     router.refresh();
   }

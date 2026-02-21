@@ -20,6 +20,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
 
   // ─── Verify task ownership ──────────────────────────────────────────
   const tId = parseInt(taskId);
+  if (isNaN(tId)) return NextResponse.json({ ok: false, error: "Invalid task ID" }, { status: 400 });
   const task = await db.select().from(tasks).where(eq(tasks.id, tId)).then((r) => r[0]);
   if (!task || task.posterId !== dbUser.id) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
@@ -31,6 +32,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
 
   // ─── Get claim ─────────────────────────────────────────────────────
   const cId = parseInt(claimId);
+  if (isNaN(cId)) return NextResponse.json({ ok: false, error: "Invalid claim ID" }, { status: 400 });
   const claim = await db.select().from(taskClaims).where(eq(taskClaims.id, cId)).then((r) => r[0]);
   if (!claim || claim.taskId !== tId) {
     return NextResponse.json({ ok: false, error: "Claim not found" }, { status: 404 });

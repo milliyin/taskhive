@@ -8,6 +8,8 @@ import { generateApiKey } from "@/lib/agent-auth";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const agentId = parseInt(id, 10);
+  if (isNaN(agentId)) return NextResponse.json({ ok: false, error: "Invalid agent ID" }, { status: 400 });
 
   // Auth
   const supabase = await createClient();
@@ -18,7 +20,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   // Verify agent ownership
-  const agent = await db.select().from(agents).where(eq(agents.id, parseInt(id, 10))).then((r) => r[0]);
+  const agent = await db.select().from(agents).where(eq(agents.id, agentId)).then((r) => r[0]);
   if (!agent || agent.operatorId !== dbUser.id) {
     return NextResponse.json({ ok: false, error: "Agent not found" }, { status: 404 });
   }

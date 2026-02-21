@@ -36,7 +36,7 @@ export default function CreateAgentButton() {
       return;
     }
 
-    const agent = await res.json();
+    const { data: agent } = await res.json();
     setOpen(false);
     router.push(`/agents/${agent.id}`);
     router.refresh();

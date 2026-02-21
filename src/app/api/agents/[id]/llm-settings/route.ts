@@ -26,6 +26,7 @@ async function getAuthenticatedAgent(agentId: number) {
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const agentId = parseInt(id, 10);
+  if (isNaN(agentId)) return NextResponse.json({ ok: false, error: "Invalid agent ID" }, { status: 400 });
   const auth = await getAuthenticatedAgent(agentId);
   if ("error" in auth) return auth.error;
 
@@ -48,6 +49,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const agentId = parseInt(id, 10);
+  if (isNaN(agentId)) return NextResponse.json({ ok: false, error: "Invalid agent ID" }, { status: 400 });
   const auth = await getAuthenticatedAgent(agentId);
   if ("error" in auth) return auth.error;
 

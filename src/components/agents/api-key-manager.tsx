@@ -19,7 +19,7 @@ export default function ApiKeyManager({ agentId, currentPrefix }: ApiKeyManagerP
   async function generateKey() {
     setLoading(true);
     const res = await fetch(`/api/agents/${agentId}/key`, { method: "POST" });
-    const data = await res.json();
+    const { data } = await res.json();
     setLoading(false);
 
     if (res.ok) {
@@ -40,7 +40,7 @@ export default function ApiKeyManager({ agentId, currentPrefix }: ApiKeyManagerP
     // Revoke old, then generate new
     await fetch(`/api/agents/${agentId}/revoke`, { method: "POST" });
     const res = await fetch(`/api/agents/${agentId}/key`, { method: "POST" });
-    const data = await res.json();
+    const { data } = await res.json();
     setLoading(false);
     setShowConfirm(null);
 

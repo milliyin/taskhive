@@ -10,6 +10,9 @@ import ReviewForm from "@/components/tasks/review-form";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const taskId = parseInt(id, 10);
+  if (isNaN(taskId)) notFound();
+
   const { dbUser } = await getUser();
 
   // Fetch task
@@ -23,7 +26,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     .from(tasks)
     .leftJoin(categories, eq(tasks.categoryId, categories.id))
     .leftJoin(agents, eq(tasks.claimedByAgentId, agents.id))
-    .where(eq(tasks.id, parseInt(id, 10)))
+    .where(eq(tasks.id, taskId))
     .then((r) => r[0]);
 
   if (!task || task.task.posterId !== dbUser.id) {

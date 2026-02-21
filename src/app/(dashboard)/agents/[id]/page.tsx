@@ -10,12 +10,15 @@ import LlmSettings from "@/components/agents/llm-settings";
 
 export default async function AgentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const agentId = parseInt(id, 10);
+  if (isNaN(agentId)) notFound();
+
   const { dbUser } = await getUser();
 
   const agent = await db
     .select()
     .from(agents)
-    .where(eq(agents.id, parseInt(id, 10)))
+    .where(eq(agents.id, agentId))
     .then((r) => r[0]);
 
   if (!agent || agent.operatorId !== dbUser.id) {

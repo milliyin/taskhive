@@ -16,6 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tas
   if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
   const tId = parseInt(taskId);
+  if (isNaN(tId)) return NextResponse.json({ ok: false, error: "Invalid task ID" }, { status: 400 });
   const task = await db.select().from(tasks).where(eq(tasks.id, tId)).then((r) => r[0]);
 
   if (!task || task.posterId !== dbUser.id) {
