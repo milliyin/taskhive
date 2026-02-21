@@ -4,15 +4,13 @@ TaskHive Reviewer Agent — Entry Point
 
 Usage:
     python run.py --task-id 42 --deliverable-id 8
-    python run.py --task-id 42 --deliverable-id 8 --url https://taskhive-six.vercel.app
-    python run.py --poll  (polls for new deliverables and reviews them)
+    python run.py --poll                          (poll for new deliverables)
+    python run.py --webhook --port 8000           (listen for webhook events)
 
 Environment variables (set in .env or shell):
-    TASKHIVE_URL          - Base URL (default: https://taskhive-six.vercel.app)
-    TASKHIVE_API_KEY      - Agent API key (required)
-    OPENROUTER_API_KEY    - OpenRouter key for LLM reviews
-    BROWSERBASE_API_KEY   - Browserbase key for URL verification
-    BROWSERBASE_PROJECT_ID - Browserbase project ID
+    TASKHIVE_URL            - Base URL (default: https://taskhive-six.vercel.app)
+    TASKHIVE_API_KEY        - Agent API key (required)
+    WEBHOOK_SECRET          - Webhook secret for signature verification (required for --webhook)
 """
 
 import os
@@ -36,8 +34,8 @@ from state import ReviewerState
 
 BANNER = """
 ╔══════════════════════════════════════════════════════════╗
-║   TaskHive Reviewer Agent — AI-Powered Code Review      ║
-║   Built with LangGraph                                  ║
+║   TaskHive Reviewer Agent — AI-Powered Code Review       ║
+║   Built with LangGraph                                   ║
 ╚══════════════════════════════════════════════════════════╝
 """
 
@@ -54,7 +52,7 @@ def run_review(task_id: int, deliverable_id: int, taskhive_url: str, taskhive_ap
         "deliverable_id": deliverable_id,
         "taskhive_url": taskhive_url,
         "taskhive_api_key": taskhive_api_key,
-        # All other fields start as None
+        # All other fields start as None — populated by the graph nodes
         "task_title": None,
         "task_description": None,
         "task_requirements": None,
@@ -64,14 +62,17 @@ def run_review(task_id: int, deliverable_id: int, taskhive_url: str, taskhive_ap
         "task_claimed_by_agent_id": None,
         "auto_review_enabled": None,
         "poster_llm_provider": None,
-        "poster_llm_key": os.environ.get("POSTER_LLM_KEY"),
+        "poster_llm_key": None,
         "poster_max_reviews": None,
         "poster_reviews_used": None,
         "freelancer_llm_provider": None,
-        "freelancer_llm_key": os.environ.get("FREELANCER_LLM_KEY"),
+        "freelancer_llm_key": None,
         "resolved_api_key": None,
         "resolved_provider": None,
         "key_source": None,
+        "deliverable_content": None,
+        "deliverable_revision_number": None,
+        "deliverable_submitted_at": None,
         "verdict": None,
         "feedback": None,
         "scores": None,
@@ -141,8 +142,8 @@ def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: in
                     )
 
                     if del_resp.status_code == 200:
-                        deliverables = del_resp.json().get("data", [])
-                        for d in deliverables:
+                        deliverables_data = del_resp.json().get("data", [])
+                        for d in deliverables_data:
                             if d.get("status") == "submitted" and d["id"] not in reviewed:
                                 print(f"\n  🆕 New deliverable found: Task #{task_id}, Deliverable #{d['id']}")
                                 run_review(task_id, d["id"], taskhive_url, taskhive_api_key)
@@ -160,6 +161,24 @@ def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: in
             time.sleep(interval)
 
 
+def start_webhook_server(taskhive_url: str, taskhive_api_key: str, webhook_secret: str, port: int):
+    """Start a Flask server that listens for TaskHive webhook events."""
+    from webhook_server import create_webhook_app
+
+    print(f"  🌐 Webhook mode — listening on http://0.0.0.0:{port}/webhook")
+    print(f"     Health check: http://0.0.0.0:{port}/health")
+    print("     Press Ctrl+C to stop\n")
+
+    app = create_webhook_app(
+        webhook_secret=webhook_secret,
+        taskhive_url=taskhive_url,
+        taskhive_api_key=taskhive_api_key,
+        run_review_fn=run_review,
+    )
+
+    app.run(host="0.0.0.0", port=port, debug=False)
+
+
 def main():
     print(BANNER)
 
@@ -172,6 +191,11 @@ def main():
                         help="TaskHive agent API key")
     parser.add_argument("--poll", action="store_true", help="Poll for new deliverables")
     parser.add_argument("--interval", type=int, default=30, help="Poll interval in seconds")
+    parser.add_argument("--webhook", action="store_true", help="Start webhook listener server")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("WEBHOOK_PORT", "8000")),
+                        help="Port for webhook server (default: 8000)")
+    parser.add_argument("--secret", default=os.environ.get("WEBHOOK_SECRET"),
+                        help="Webhook secret for signature verification")
 
     args = parser.parse_args()
 
@@ -185,29 +209,34 @@ def main():
     print(f"  Target: {args.url}")
     print(f"  API Key: {api_key[:20]}...")
 
-    # Check for LLM key
-    llm_key = (
-        os.environ.get("OPENROUTER_API_KEY")
-        or os.environ.get("ANTHROPIC_API_KEY")
-        or os.environ.get("OPENAI_API_KEY")
-        or os.environ.get("POSTER_LLM_KEY")
-        or os.environ.get("FREELANCER_LLM_KEY")
-    )
-    if llm_key:
-        print(f"  LLM Key: {llm_key[:12]}...✅")
-    else:
-        print("  LLM Key: ⚠️  Not set (will skip automated reviews)")
+    if args.webhook:
+        # ─── Webhook mode ──────────────────────────────────────────
+        webhook_secret = args.secret
+        if not webhook_secret:
+            print("  ❌ No webhook secret provided!")
+            print("     Set WEBHOOK_SECRET env var or use --secret flag")
+            print("     The secret is returned when you register a webhook via POST /api/v1/webhooks")
+            sys.exit(1)
 
-    if args.poll:
+        print(f"  Webhook Secret: {webhook_secret[:10]}...✅")
+        start_webhook_server(args.url, api_key, webhook_secret, args.port)
+
+    elif args.poll:
+        # ─── Poll mode ─────────────────────────────────────────────
         poll_for_deliverables(args.url, api_key, args.interval)
+
     elif args.task_id and args.deliverable_id:
+        # ─── Single review mode ────────────────────────────────────
         result = run_review(args.task_id, args.deliverable_id, args.url, api_key)
         sys.exit(0 if result.get("verdict") in ("pass", "fail", "skipped") else 1)
+
     else:
         print("\n  Usage:")
-        print("    python run.py --task-id 42 --deliverable-id 8")
-        print("    python run.py --poll")
-        print("\n  Set TASKHIVE_API_KEY and OPENROUTER_API_KEY environment variables")
+        print("    python run.py --task-id 42 --deliverable-id 8    (single review)")
+        print("    python run.py --poll                              (poll every 30s)")
+        print("    python run.py --webhook --port 8000               (webhook listener)")
+        print("\n  Required env vars: TASKHIVE_API_KEY")
+        print("  For webhook mode:  WEBHOOK_SECRET")
         sys.exit(1)
 
 

@@ -32,17 +32,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     );
   }
 
-  // Decrypt poster's LLM key if available
+  // ─── Poster key: only if auto_review_enabled ──────────────────
   let posterLlmKey: string | null = null;
-  if (task.posterLlmKeyEncrypted) {
+  const posterKeyAvailable = task.autoReviewEnabled && !!task.posterLlmKeyEncrypted;
+  const posterUnderLimit = task.posterMaxReviews === null || task.posterReviewsUsed < (task.posterMaxReviews ?? 0);
+  const posterKeyUsable = posterKeyAvailable && posterUnderLimit;
+
+  if (posterKeyUsable) {
     try {
-      posterLlmKey = decrypt(task.posterLlmKeyEncrypted);
+      posterLlmKey = decrypt(task.posterLlmKeyEncrypted!);
     } catch {
       posterLlmKey = null;
     }
   }
 
-  // Get freelancer's (claimed agent's) LLM key if available
+  // ─── Freelancer key: always available if set ──────────────────
   let freelancerLlmKey: string | null = null;
   let freelancerLlmProvider: string | null = null;
 
@@ -60,12 +64,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const data = {
     auto_review_enabled: task.autoReviewEnabled,
+    // Poster key info
     poster_llm_key: posterLlmKey,
-    poster_llm_provider: task.posterLlmProvider,
+    poster_llm_provider: posterKeyUsable ? task.posterLlmProvider : null,
     poster_max_reviews: task.posterMaxReviews,
     poster_reviews_used: task.posterReviewsUsed,
+    poster_key_usable: posterKeyUsable,
+    poster_limit_reached: posterKeyAvailable && !posterUnderLimit,
+    // Freelancer key info
     freelancer_llm_key: freelancerLlmKey,
     freelancer_llm_provider: freelancerLlmProvider,
+    freelancer_key_available: !!freelancerLlmKey,
   };
 
   return withRateHeaders(apiSuccess(data), rateHeaders);

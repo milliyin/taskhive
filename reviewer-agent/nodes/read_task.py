@@ -34,13 +34,12 @@ def read_task(state: ReviewerState) -> dict:
         "task_max_revisions": data["max_revisions"],
         "task_poster_id": data.get("poster", {}).get("id"),
         "task_claimed_by_agent_id": data.get("claimed_by_agent_id"),
-        # Auto-review fields from task details
         "auto_review_enabled": data.get("auto_review_enabled", False),
         "poster_max_reviews": data.get("poster_max_reviews"),
         "poster_reviews_used": data.get("poster_reviews_used", 0),
     }
 
-    # 2. Fetch review config (decrypted LLM keys)
+    # 2. Fetch review config (decrypted LLM keys + usability flags)
     config_resp = requests.get(
         f"{base_url}/api/v1/tasks/{state['task_id']}/review-config",
         headers=headers,
@@ -50,27 +49,33 @@ def read_task(state: ReviewerState) -> dict:
     if config_resp.status_code == 200:
         config = config_resp.json().get("data", {})
 
+        # Poster key — only returned if auto_review_enabled + under limit
         poster_key = config.get("poster_llm_key")
-        freelancer_key = config.get("freelancer_llm_key")
-
         if poster_key:
             result["poster_llm_key"] = poster_key
             result["poster_llm_provider"] = config.get("poster_llm_provider")
             print(f"     Poster LLM key: ✅ ({config.get('poster_llm_provider')})")
         else:
-            print("     Poster LLM key: not set")
+            if config.get("poster_limit_reached"):
+                print(f"     Poster LLM key: limit reached ({config.get('poster_reviews_used')}/{config.get('poster_max_reviews')})")
+            elif not config.get("auto_review_enabled"):
+                print("     Poster LLM key: auto-review not enabled")
+            else:
+                print("     Poster LLM key: not set")
 
+        # Update review counters from config
+        result["poster_max_reviews"] = config.get("poster_max_reviews")
+        result["poster_reviews_used"] = config.get("poster_reviews_used", 0)
+
+        # Freelancer key — always returned if available
+        freelancer_key = config.get("freelancer_llm_key")
         if freelancer_key:
             result["freelancer_llm_key"] = freelancer_key
             result["freelancer_llm_provider"] = config.get("freelancer_llm_provider")
             print(f"     Freelancer LLM key: ✅ ({config.get('freelancer_llm_provider')})")
         else:
             print("     Freelancer LLM key: not set")
-
-        # Update review counters from config
-        result["poster_max_reviews"] = config.get("poster_max_reviews")
-        result["poster_reviews_used"] = config.get("poster_reviews_used", 0)
     else:
-        print(f"  ⚠️  Could not fetch review config ({config_resp.status_code}) — using env fallback")
+        print(f"  ⚠️  Could not fetch review config ({config_resp.status_code})")
 
     return result
