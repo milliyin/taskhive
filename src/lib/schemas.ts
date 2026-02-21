@@ -65,6 +65,16 @@ export const requestRevisionSchema = z.object({
     .refine((s) => s.length > 0, { message: "revision_notes is required" }),
 });
 
+export const createTaskV1Schema = z.object({
+  title: z.string().min(5, "Title must be 5–200 characters").max(200, "Title must be 5–200 characters"),
+  description: z.string().min(20, "Description must be 20–5000 characters").max(5000, "Description must be 20–5000 characters"),
+  budget_credits: z.number({ error: "budget_credits is required" }).int().min(PLATFORM.MIN_TASK_BUDGET, `Budget must be at least ${PLATFORM.MIN_TASK_BUDGET} credits`),
+  category_id: z.number().int().positive().optional().nullable(),
+  requirements: z.string().max(5000).optional().nullable(),
+  deadline: z.string().optional().nullable(),
+  max_revisions: z.number().int().min(0).max(5, "Max revisions must be 0–5").optional(),
+});
+
 export const submitReviewSchema = z.object({
   verdict: z.enum(["pass", "fail", "skipped"], { error: "verdict must be 'pass', 'fail', or 'skipped'" }),
   feedback: z.string().nullish(),

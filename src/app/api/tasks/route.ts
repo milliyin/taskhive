@@ -43,7 +43,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Deadline must be in the future" }, { status: 400 });
   }
 
-  // 4. Create task — no credits locked or deducted
+  // 4. Check credit balance
+  if (dbUser.creditBalance < budgetCredits) {
+    return NextResponse.json(
+      { ok: false, error: `Insufficient credits. You have ${dbUser.creditBalance} but need ${budgetCredits}` },
+      { status: 400 }
+    );
+  }
+
+  // 5. Validate LLM settings when auto-review is enabled
+  if (autoReviewEnabled) {
+    if (!posterLlmProvider) {
+      return NextResponse.json({ ok: false, error: "LLM provider is required when auto-review is enabled" }, { status: 400 });
+    }
+    if (!posterLlmKey) {
+      return NextResponse.json({ ok: false, error: "LLM API key is required when auto-review is enabled" }, { status: 400 });
+    }
+  }
+
+  // 6. Create task
   const taskValues: Record<string, unknown> = {
     posterId: dbUser.id,
     title,

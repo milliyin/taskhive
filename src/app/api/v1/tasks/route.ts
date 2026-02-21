@@ -1,8 +1,11 @@
-// Location: src/app/api/v1/tasks/route.ts — GET browse tasks
-import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseIntParam } from "@/lib/agent-auth";
+// Location: src/app/api/v1/tasks/route.ts — GET browse tasks + POST create task
+import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseIntParam, getIdempotentResponse, storeIdempotentResponse } from "@/lib/agent-auth";
+import { parseBody, createTaskV1Schema } from "@/lib/schemas";
 import db from "@/db/index";
-import { tasks, categories, users } from "@/db/schema";
+import { tasks, categories, users, webhooks } from "@/db/schema";
 import { eq, and, gte, lte, desc, asc, lt, gt, sql, SQL } from "drizzle-orm";
+import { PLATFORM } from "@/lib/constants";
+import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 
 export async function GET(request: Request) {
   const auth = await authenticateAgent(request);
@@ -143,4 +146,114 @@ export async function GET(request: Request) {
   });
 
   return withRateHeaders(res, rateHeaders);
+}
+
+export async function POST(request: Request) {
+  const auth = await authenticateAgent(request);
+  if (auth instanceof Response) return auth;
+  const { agent, rateHeaders, idempotencyKey } = auth;
+
+  // [IDEMPOTENCY] Check cache
+  if (idempotencyKey) {
+    const cached = getIdempotentResponse(agent.id, idempotencyKey);
+    if (cached) return withRateHeaders(cached, rateHeaders);
+  }
+
+  // Parse & validate body
+  const body = await request.json();
+  const parsed = parseBody(createTaskV1Schema, body);
+  if (!parsed.success) {
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body", rateHeaders);
+  }
+
+  const { title, description, budget_credits, category_id, requirements, deadline, max_revisions } = parsed.data;
+
+  // Validate deadline is in the future
+  if (deadline && new Date(deadline) <= new Date()) {
+    return apiError(422, "INVALID_DEADLINE", "Deadline must be in the future", "Provide a future ISO 8601 date string", rateHeaders);
+  }
+
+  // Validate category exists (if provided)
+  if (category_id) {
+    const cat = await db.select({ id: categories.id }).from(categories).where(eq(categories.id, category_id)).then((r) => r[0]);
+    if (!cat) {
+      return apiError(404, "CATEGORY_NOT_FOUND", `Category ${category_id} does not exist`, "Use a valid category ID", rateHeaders);
+    }
+  }
+
+  // Check operator's credit balance
+  const operator = await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]);
+  if (!operator) {
+    return apiError(404, "USER_NOT_FOUND", "Agent operator not found", "Contact support", rateHeaders);
+  }
+  if (operator.creditBalance < budget_credits) {
+    return apiError(422, "INSUFFICIENT_CREDITS",
+      `Insufficient credits. Balance: ${operator.creditBalance}, required: ${budget_credits}`,
+      "Top up credits or reduce the budget",
+      rateHeaders
+    );
+  }
+
+  // Create task — poster is the agent's operator
+  const result = await db
+    .insert(tasks)
+    .values({
+      posterId: agent.operatorId,
+      title,
+      description,
+      requirements: requirements || null,
+      budgetCredits: budget_credits,
+      categoryId: category_id || null,
+      deadline: deadline ? new Date(deadline) : null,
+      maxRevisions: max_revisions ?? PLATFORM.MAX_REVISIONS_DEFAULT,
+    })
+    .returning();
+
+  const t = result[0];
+
+  const data = {
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    requirements: t.requirements,
+    budget_credits: t.budgetCredits,
+    category_id: t.categoryId,
+    status: t.status,
+    poster_id: t.posterId,
+    deadline: t.deadline,
+    max_revisions: t.maxRevisions,
+    created_at: t.createdAt,
+  };
+
+  // Fire task.new_match webhook to all agents with active webhooks
+  const agentsWithHooks = await db
+    .select({ agentId: webhooks.agentId })
+    .from(webhooks)
+    .where(eq(webhooks.isActive, true))
+    .groupBy(webhooks.agentId);
+
+  await Promise.allSettled(
+    agentsWithHooks.map(({ agentId }) =>
+      dispatchWebhook(agentId, "task.new_match", {
+        task_id: t.id,
+        title: t.title,
+        budget_credits: t.budgetCredits,
+        category_id: t.categoryId,
+      })
+    )
+  );
+
+  const response = withRateHeaders(apiSuccess(data, {}, 201), rateHeaders);
+
+  // [IDEMPOTENCY] Store response
+  if (idempotencyKey) {
+    const responseBody = JSON.stringify({
+      ok: true,
+      data,
+      meta: { timestamp: new Date().toISOString() },
+    });
+    storeIdempotentResponse(agent.id, idempotencyKey, response, responseBody);
+  }
+
+  return response;
 }

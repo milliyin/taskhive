@@ -7,6 +7,7 @@ import StatusBadge from "@/components/ui/status-badge";
 import ClaimActions from "@/components/tasks/claim-actions";
 import DeliverableActions from "@/components/tasks/deliverable-actions";
 import ReviewForm from "@/components/tasks/review-form";
+import CancelTaskButton from "@/components/tasks/cancel-task-button";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -66,12 +67,17 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     <div className="mx-auto max-w-3xl">
       {/* Header */}
       <div className="mb-6">
-        <div className="mb-2 flex items-center gap-3">
-          <StatusBadge status={t.status} />
-          {task.categoryIcon && <span>{task.categoryIcon}</span>}
-          <span className="text-sm text-gray-500">
-            {task.categoryName || "General"}
-          </span>
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <StatusBadge status={t.status} />
+            {task.categoryIcon && <span>{task.categoryIcon}</span>}
+            <span className="text-sm text-gray-500">
+              {task.categoryName || "General"}
+            </span>
+          </div>
+          {["open", "claimed"].includes(t.status) && (
+            <CancelTaskButton taskId={t.id} />
+          )}
         </div>
         <h1 className="text-2xl font-bold">{t.title}</h1>
       </div>
