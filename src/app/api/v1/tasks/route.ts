@@ -6,6 +6,7 @@ import { tasks, categories, users, webhooks } from "@/db/schema";
 import { eq, and, gte, lte, desc, asc, lt, gt, sql, SQL } from "drizzle-orm";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
+import { encrypt } from "@/lib/encryption";
 
 export async function GET(request: Request) {
   const auth = await authenticateAgent(request);
@@ -166,7 +167,8 @@ export async function POST(request: Request) {
     return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: title (5-200 chars), description (20-5000 chars), budget_credits (integer). Optional: category_id, requirements, deadline (ISO 8601), max_revisions (0-5)", rateHeaders);
   }
 
-  const { title, description, budget_credits, category_id, requirements, deadline, max_revisions } = parsed.data;
+  const { title, description, budget_credits, category_id, requirements, deadline, max_revisions,
+    auto_review_enabled, poster_llm_provider, poster_llm_key, poster_max_reviews } = parsed.data;
 
   // Validate deadline is in the future
   if (deadline && new Date(deadline) <= new Date()) {
@@ -194,19 +196,40 @@ export async function POST(request: Request) {
     );
   }
 
+  // Validate auto-review settings
+  if (auto_review_enabled) {
+    if (!poster_llm_provider) {
+      return apiError(422, "MISSING_LLM_PROVIDER", "poster_llm_provider is required when auto_review_enabled is true",
+        "Set poster_llm_provider to 'openrouter', 'anthropic', or 'openai'", rateHeaders);
+    }
+    if (!poster_llm_key) {
+      return apiError(422, "MISSING_LLM_KEY", "poster_llm_key is required when auto_review_enabled is true",
+        "Provide your LLM API key. It will be encrypted at rest and only used for auto-review", rateHeaders);
+    }
+  }
+
   // Create task — poster is the agent's operator
+  const taskValues: Record<string, unknown> = {
+    posterId: agent.operatorId,
+    title,
+    description,
+    requirements: requirements || null,
+    budgetCredits: budget_credits,
+    categoryId: category_id || null,
+    deadline: deadline ? new Date(deadline) : null,
+    maxRevisions: max_revisions ?? PLATFORM.MAX_REVISIONS_DEFAULT,
+  };
+
+  if (auto_review_enabled) {
+    taskValues.autoReviewEnabled = true;
+    if (poster_llm_provider) taskValues.posterLlmProvider = poster_llm_provider;
+    if (poster_llm_key) taskValues.posterLlmKeyEncrypted = encrypt(poster_llm_key);
+    if (poster_max_reviews) taskValues.posterMaxReviews = poster_max_reviews;
+  }
+
   const result = await db
     .insert(tasks)
-    .values({
-      posterId: agent.operatorId,
-      title,
-      description,
-      requirements: requirements || null,
-      budgetCredits: budget_credits,
-      categoryId: category_id || null,
-      deadline: deadline ? new Date(deadline) : null,
-      maxRevisions: max_revisions ?? PLATFORM.MAX_REVISIONS_DEFAULT,
-    })
+    .values(taskValues as typeof tasks.$inferInsert)
     .returning();
 
   const t = result[0];
@@ -222,6 +245,9 @@ export async function POST(request: Request) {
     poster_id: t.posterId,
     deadline: t.deadline,
     max_revisions: t.maxRevisions,
+    auto_review_enabled: t.autoReviewEnabled,
+    poster_llm_provider: t.posterLlmProvider || null,
+    poster_max_reviews: t.posterMaxReviews || null,
     created_at: t.createdAt,
   };
 

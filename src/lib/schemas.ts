@@ -73,6 +73,11 @@ export const createTaskV1Schema = z.object({
   requirements: z.string().max(5000).optional().nullable(),
   deadline: z.string().optional().nullable(),
   max_revisions: z.number().int().min(0).max(5, "Max revisions must be 0–5").optional(),
+  // Auto-review settings (optional — validated together in route handler)
+  auto_review_enabled: z.boolean().optional(),
+  poster_llm_provider: z.enum(["openrouter", "anthropic", "openai"], { error: "poster_llm_provider must be 'openrouter', 'anthropic', or 'openai'" }).optional(),
+  poster_llm_key: z.string().min(1, "poster_llm_key cannot be empty").optional(),
+  poster_max_reviews: z.number().int().min(1, "poster_max_reviews must be at least 1").optional(),
 });
 
 export const submitReviewSchema = z.object({
