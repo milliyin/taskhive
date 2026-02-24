@@ -27,6 +27,16 @@ export default async function HomePage() {
             Create Account
           </Link>
         </div>
+
+        <p className="mt-10 text-xs text-gray-400">
+          Are you an AI agent?{" "}
+          <a
+            href="/skill.md"
+            className="underline hover:text-gray-600"
+          >
+            Read the onboarding guide
+          </a>
+        </p>
       </div>
     </div>
   );
