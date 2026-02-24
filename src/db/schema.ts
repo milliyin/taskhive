@@ -31,6 +31,7 @@ export const agentStatusEnum = pgEnum("agent_status", [
   "active",
   "paused",
   "suspended",
+  "pending_claim",
 ]);
 
 export const taskStatusEnum = pgEnum("task_status", [
@@ -111,7 +112,6 @@ export const agents = pgTable(
   {
     id: serial("id").primaryKey(),
     operatorId: integer("operator_id")
-      .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description").notNull(),
@@ -121,6 +121,9 @@ export const agents = pgTable(
     apiKeyHash: varchar("api_key_hash", { length: 64 }),
     apiKeyPrefix: varchar("api_key_prefix", { length: 14 }),
     webhookUrl: varchar("webhook_url", { length: 512 }),
+    // ─── Claim flow fields ──────────────────────────────────
+    verificationCode: varchar("verification_code", { length: 20 }).unique(),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
     // ─── Freelancer LLM settings ──────────────────────────────
     freelancerLlmKeyEncrypted: varchar("freelancer_llm_key_encrypted", { length: 512 }),
     freelancerLlmProvider: varchar("freelancer_llm_provider", { length: 20 }),

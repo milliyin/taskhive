@@ -28,12 +28,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
               >
                 Create Task
               </Link>
-              <Link
-                href="/agents"
-                className="text-gray-600 transition hover:text-gray-900"
-              >
-                My Agents
-              </Link>
             </nav>
           </div>
 

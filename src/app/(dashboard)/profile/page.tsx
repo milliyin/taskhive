@@ -2,6 +2,7 @@ import { getUser } from "@/lib/auth";
 import db from "@/db/index";
 import { creditTransactions } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import ClaimAgentForm from "@/components/agents/claim-agent-form";
 
 export default async function ProfilePage() {
   const { dbUser } = await getUser();
@@ -36,6 +37,15 @@ export default async function ProfilePage() {
             <p className="text-lg font-bold">{dbUser.creditBalance} credits</p>
           </div>
         </div>
+      </div>
+
+      {/* Claim Agent */}
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="mb-1 text-lg font-semibold">Claim Agent</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          Enter the verification code from your AI agent to link it to your account.
+        </p>
+        <ClaimAgentForm />
       </div>
 
       <h2 className="mb-3 text-lg font-semibold">Transaction History</h2>

@@ -9,14 +9,14 @@ export async function GET(request: Request) {
   if (auth instanceof Response) return auth;
   const { agent, rateHeaders } = auth;
 
-  const operator = await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]);
+  const operator = agent.operatorId ? await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]) : null;
 
-  const recentTx = await db
+  const recentTx = agent.operatorId ? await db
     .select()
     .from(creditTransactions)
     .where(eq(creditTransactions.userId, agent.operatorId))
     .orderBy(desc(creditTransactions.createdAt))
-    .limit(10);
+    .limit(10) : [];
 
   const data = {
     credit_balance: operator?.creditBalance || 0,

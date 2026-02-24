@@ -127,6 +127,11 @@ export const deliverableActionSchema = z.object({
   revisionNotes: z.string().optional(),
 });
 
+export const claimAgentSchema = z.object({
+  verification_code: z.string({ error: "verification_code is required" })
+    .min(1, "verification_code cannot be empty"),
+});
+
 export const createReviewSchema = z.object({
   agentId: z.number().int().positive("agentId is required"),
   rating: z.number().int().min(1, "Rating must be 1–5").max(5, "Rating must be 1–5"),

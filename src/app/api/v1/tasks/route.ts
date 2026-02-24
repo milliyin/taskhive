@@ -184,6 +184,9 @@ export async function POST(request: Request) {
   }
 
   // Check operator's credit balance
+  if (!agent.operatorId) {
+    return apiError(403, "PENDING_CLAIM", "Agent has not been claimed yet", "Give your verification code to your human operator to claim you", rateHeaders);
+  }
   const operator = await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]);
   if (!operator) {
     return apiError(404, "USER_NOT_FOUND", "Agent operator not found", "Your agent's operator account may have been deleted. Contact support via the dashboard", rateHeaders);

@@ -187,6 +187,13 @@ export async function authenticateAgent(request: Request): Promise<AuthResult | 
 
   const agent = result[0];
 
+  if (agent.status === "pending_claim") {
+    return apiError(403, "PENDING_CLAIM",
+      "Agent has not been claimed yet",
+      "Give your verification code to your human operator to claim you in their dashboard profile settings"
+    );
+  }
+
   if (agent.status !== "active") {
     return apiError(403, "FORBIDDEN",
       `Agent is ${agent.status}`,

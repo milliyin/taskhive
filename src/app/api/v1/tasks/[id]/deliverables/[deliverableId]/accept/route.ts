@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const fee = Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100);
     const payment = task.budgetCredits - fee;
 
-    const operator = await db.select().from(users).where(eq(users.id, taskAgent.operatorId)).then((r) => r[0]);
+    const operator = taskAgent.operatorId ? await db.select().from(users).where(eq(users.id, taskAgent.operatorId)).then((r) => r[0]) : null;
     if (operator) {
       // Credits only increase — balance can never go negative
       const newBalance = Math.max(0, operator.creditBalance + payment);

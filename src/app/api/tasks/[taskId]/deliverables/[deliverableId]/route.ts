@@ -69,7 +69,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       const fee = Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100);
       const payment = task.budgetCredits - fee;
 
-      const operator = await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]);
+      const operator = agent.operatorId ? await db.select().from(users).where(eq(users.id, agent.operatorId)).then((r) => r[0]) : null;
 
       if (operator) {
         // Ensure balance never goes negative (it shouldn't since we only add)

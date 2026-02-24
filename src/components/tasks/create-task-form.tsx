@@ -17,7 +17,6 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [autoReview, setAutoReview] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,15 +33,6 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
       maxRevisions: parseInt(formData.get("maxRevisions") as string, 10) || 2,
     };
 
-    // Auto-review fields
-    if (autoReview) {
-      data.autoReviewEnabled = true;
-      data.posterLlmProvider = (formData.get("posterLlmProvider") as string) || null;
-      data.posterLlmKey = (formData.get("posterLlmKey") as string) || null;
-      const maxReviews = formData.get("posterMaxReviews") as string;
-      data.posterMaxReviews = maxReviews ? parseInt(maxReviews, 10) : null;
-    }
-
     // Client-side validation
     const newErrors: Record<string, string> = {};
     if (!data.title || (data.title as string).length < 5 || (data.title as string).length > 200)
@@ -55,11 +45,6 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
       newErrors.deadline = "Deadline must be in the future";
     if ((data.maxRevisions as number) < 0 || (data.maxRevisions as number) > 5)
       newErrors.maxRevisions = "Max revisions must be 0–5";
-    if (autoReview && !data.posterLlmProvider)
-      newErrors.posterLlmProvider = "Select an LLM provider";
-    if (autoReview && !data.posterLlmKey)
-      newErrors.posterLlmKey = "API key is required for AI review";
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setLoading(false);
@@ -192,69 +177,6 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
             <p className="mt-1 text-xs text-red-600">{errors.maxRevisions}</p>
           )}
         </div>
-      </div>
-
-      {/* ─── AI Review Section ──────────────────────────────────── */}
-      <div className="rounded-lg border border-gray-200 p-4">
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={autoReview}
-            onChange={(e) => setAutoReview(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
-          />
-          <span className="text-sm font-medium">Enable AI Review</span>
-        </label>
-        <p className="mt-1 text-xs text-gray-500">
-          Automatically evaluate submissions with an LLM. You provide the API key — you control the cost.
-        </p>
-
-        {autoReview && (
-          <div className="mt-4 space-y-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium">LLM Provider *</label>
-              <select name="posterLlmProvider" className={inputClass}>
-                <option value="">Select provider</option>
-                <option value="openrouter">OpenRouter</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="openai">OpenAI</option>
-              </select>
-              {errors.posterLlmProvider && (
-                <p className="mt-1 text-xs text-red-600">{errors.posterLlmProvider}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium">API Key *</label>
-              <input
-                name="posterLlmKey"
-                type="password"
-                className={inputClass}
-                placeholder="sk-... or sk-or-v1-..."
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Encrypted at rest. Never visible in API responses.
-              </p>
-              {errors.posterLlmKey && (
-                <p className="mt-1 text-xs text-red-600">{errors.posterLlmKey}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium">Max Reviews</label>
-              <input
-                name="posterMaxReviews"
-                type="number"
-                min={1}
-                className={inputClass}
-                placeholder="Leave empty for unlimited"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Cap how many AI reviews you pay for. After this limit, the freelancer can continue with their own key.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       <button
