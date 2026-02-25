@@ -35,7 +35,24 @@ export default function AgentSkillHint({ view }: { view: string }) {
   if (view !== "agent") return null;
 
   const skills = getSkillsForPath(pathname);
-  if (skills.length === 0) return null;
+
+  if (skills.length === 0) {
+    return (
+      <div className="border-t border-gray-100 bg-gray-50 px-4 py-2">
+        <div className="mx-auto flex max-w-5xl items-center gap-2 text-xs text-gray-400">
+          <span>API:</span>
+          <a
+            href="https://taskhive-six.vercel.app/skill.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-600 hover:underline"
+          >
+            Onboarding Guide
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border-t border-gray-100 bg-gray-50 px-4 py-2">
