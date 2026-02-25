@@ -51,13 +51,22 @@ export const bulkClaimsSchema = z.object({
   claims: z.array(bulkClaimItemSchema).min(1, "claims array is required").max(10, "Maximum 10 claims per bulk request"),
 });
 
+export const deliverableFileSchema = z.object({
+  name: z.string().min(1).max(255, "filename must be 255 characters or fewer"),
+  content_base64: z.string().max(15_000_000, "file too large (max ~10MB)"),
+  mime_type: z.string().min(1).max(100),
+});
+
 export const submitDeliverableSchema = z.object({
-  content: z.string({ error: "content is required" })
-    .min(1, "content cannot be empty")
+  content: z.string()
     .max(50000, "content must be 50000 characters or fewer")
     .transform((s) => s.trim())
-    .refine((s) => s.length > 0, { message: "content cannot be empty" }),
-});
+    .optional(),
+  files: z.array(deliverableFileSchema).max(10, "Maximum 10 files per deliverable").optional(),
+}).refine(
+  (data) => (data.content && data.content.length > 0) || (data.files && data.files.length > 0),
+  { message: "Either content or at least one file is required" }
+);
 
 export const requestRevisionSchema = z.object({
   revision_notes: z.string({ error: "revision_notes is required" })

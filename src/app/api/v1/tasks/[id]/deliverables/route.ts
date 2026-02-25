@@ -2,9 +2,10 @@
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import { parseBody, submitDeliverableSchema } from "@/lib/schemas";
 import db from "@/db/index";
-import { tasks, deliverables, webhooks } from "@/db/schema";
+import { tasks, deliverables, deliverableFiles, webhooks } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
+import { uploadFile, classifyFileType, isAllowedMimeType, DELIVERABLES_BUCKET, MAX_DELIVERABLE_FILE_SIZE } from "@/lib/storage";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
@@ -46,9 +47,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json();
   const parsed = parseBody(submitDeliverableSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: content (string, your deliverable submission)");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: content (string) and/or files (array of {name, content_base64, mime_type})");
   }
-  const { content } = parsed.data;
+  const { content, files } = parsed.data;
 
   // Check revision count
   const existingCount = await db
@@ -96,16 +97,56 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .values({
       taskId,
       agentId: agent.id,
-      content: content.trim(),
+      content: content?.trim() || "",
       revisionNumber,
     })
     .returning();
 
+  const d = result[0];
+
+  // Process file uploads (if any)
+  const uploadedFiles: Array<{ id: number; name: string; file_type: string; size_bytes: number; public_url: string | null }> = [];
+  if (files && files.length > 0) {
+    for (const file of files) {
+      if (!isAllowedMimeType(file.mime_type)) continue;
+
+      const buffer = Buffer.from(file.content_base64, "base64");
+      if (buffer.length > MAX_DELIVERABLE_FILE_SIZE) continue;
+
+      const storagePath = `${taskId}/${d.id}/${Date.now()}-${file.name}`;
+      try {
+        const { publicUrl } = await uploadFile(DELIVERABLES_BUCKET, storagePath, buffer, file.mime_type);
+        const fileType = classifyFileType(file.mime_type, file.name);
+
+        const [inserted] = await db.insert(deliverableFiles).values({
+          deliverableId: d.id,
+          taskId,
+          agentId: agent.id,
+          storagePath,
+          originalName: file.name,
+          mimeType: file.mime_type,
+          sizeBytes: buffer.length,
+          fileType,
+          publicUrl,
+        }).returning();
+
+        uploadedFiles.push({
+          id: inserted.id,
+          name: inserted.originalName,
+          file_type: inserted.fileType,
+          size_bytes: inserted.sizeBytes,
+          public_url: inserted.publicUrl,
+        });
+      } catch {
+        // Skip failed uploads silently — partial success is acceptable
+      }
+    }
+  }
+
   // Update task status
   await db.update(tasks).set({ status: "delivered", updatedAt: new Date() }).where(eq(tasks.id, taskId));
 
-  const d = result[0];
-  const data = {
+  const data: Record<string, unknown> = {
     id: d.id,
     task_id: d.taskId,
     agent_id: d.agentId,
@@ -115,6 +156,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     submitted_at: d.submittedAt,
     is_late: isLate,
   };
+  if (uploadedFiles.length > 0) {
+    data.files = uploadedFiles;
+  }
 
   const meta: Record<string, unknown> = {};
   if (isLate) {
@@ -165,16 +209,39 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     .where(eq(deliverables.taskId, taskId))
     .orderBy(deliverables.revisionNumber);
 
-  const data = dels.map((d) => ({
-    id: d.id,
-    task_id: d.taskId,
-    agent_id: d.agentId,
-    content: d.content,
-    status: d.status,
-    revision_notes: d.revisionNotes,
-    revision_number: d.revisionNumber,
-    submitted_at: d.submittedAt,
-  }));
+  // Fetch files for all deliverables in one query
+  const allFiles = dels.length > 0
+    ? await db.select().from(deliverableFiles).where(eq(deliverableFiles.taskId, taskId))
+    : [];
+
+  const filesByDeliverable = new Map<number, typeof allFiles>();
+  for (const f of allFiles) {
+    const arr = filesByDeliverable.get(f.deliverableId) || [];
+    arr.push(f);
+    filesByDeliverable.set(f.deliverableId, arr);
+  }
+
+  const data = dels.map((d) => {
+    const dFiles = filesByDeliverable.get(d.id) || [];
+    return {
+      id: d.id,
+      task_id: d.taskId,
+      agent_id: d.agentId,
+      content: d.content,
+      status: d.status,
+      revision_notes: d.revisionNotes,
+      revision_number: d.revisionNumber,
+      submitted_at: d.submittedAt,
+      files: dFiles.map((f) => ({
+        id: f.id,
+        name: f.originalName,
+        mime_type: f.mimeType,
+        file_type: f.fileType,
+        size_bytes: f.sizeBytes,
+        public_url: f.publicUrl,
+      })),
+    };
+  });
 
   return withRateHeaders(apiSuccess(data), rateHeaders);
 }

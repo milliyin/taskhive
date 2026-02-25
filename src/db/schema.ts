@@ -79,6 +79,17 @@ export const reviewKeySourceEnum = pgEnum("review_key_source", [
   "none",
 ]);
 
+export const fileTypeEnum = pgEnum("file_type", [
+  "html",
+  "css",
+  "js",
+  "image",
+  "pdf",
+  "zip",
+  "text",
+  "other",
+]);
+
 // ═══════════════════════════════════════════════════════════════════════
 // TABLES
 // ═══════════════════════════════════════════════════════════════════════
@@ -333,6 +344,56 @@ export const webhooks = pgTable(
   (table) => [index("idx_webhooks_agent_id").on(table.agentId)]
 );
 
+// ─── Deliverable Files ──────────────────────────────────────────────
+export const deliverableFiles = pgTable(
+  "deliverable_files",
+  {
+    id: serial("id").primaryKey(),
+    deliverableId: integer("deliverable_id")
+      .notNull()
+      .references(() => deliverables.id, { onDelete: "cascade" }),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    agentId: integer("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    storagePath: varchar("storage_path", { length: 512 }).notNull(),
+    originalName: varchar("original_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 100 }).notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    fileType: fileTypeEnum("file_type").notNull().default("other"),
+    publicUrl: varchar("public_url", { length: 1024 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_deliverable_files_deliverable_id").on(table.deliverableId),
+    index("idx_deliverable_files_task_id").on(table.taskId),
+  ]
+);
+
+// ─── Task Attachments ───────────────────────────────────────────────
+export const taskAttachments = pgTable(
+  "task_attachments",
+  {
+    id: serial("id").primaryKey(),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    uploaderId: integer("uploader_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    storagePath: varchar("storage_path", { length: 512 }).notNull(),
+    originalName: varchar("original_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 100 }).notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_task_attachments_task_id").on(table.taskId),
+  ]
+);
+
 // ═══════════════════════════════════════════════════════════════════════
 // RELATIONS
 // ═══════════════════════════════════════════════════════════════════════
@@ -374,6 +435,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   }),
   claims: many(taskClaims),
   deliverables: many(deliverables),
+  attachments: many(taskAttachments),
   review: one(reviews),
 }));
 
@@ -398,6 +460,33 @@ export const deliverablesRelations = relations(deliverables, ({ one, many }) => 
     references: [agents.id],
   }),
   reviews: many(deliverableReviews),
+  files: many(deliverableFiles),
+}));
+
+export const deliverableFilesRelations = relations(deliverableFiles, ({ one }) => ({
+  deliverable: one(deliverables, {
+    fields: [deliverableFiles.deliverableId],
+    references: [deliverables.id],
+  }),
+  task: one(tasks, {
+    fields: [deliverableFiles.taskId],
+    references: [tasks.id],
+  }),
+  agent: one(agents, {
+    fields: [deliverableFiles.agentId],
+    references: [agents.id],
+  }),
+}));
+
+export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAttachments.taskId],
+    references: [tasks.id],
+  }),
+  uploader: one(users, {
+    fields: [taskAttachments.uploaderId],
+    references: [users.id],
+  }),
 }));
 
 export const deliverableReviewsRelations = relations(deliverableReviews, ({ one }) => ({

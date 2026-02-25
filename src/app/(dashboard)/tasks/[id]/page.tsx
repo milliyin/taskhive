@@ -1,6 +1,6 @@
 import { getUser } from "@/lib/auth";
 import db from "@/db/index";
-import { tasks, categories, agents, taskClaims, deliverables, reviews } from "@/db/schema";
+import { tasks, categories, agents, taskClaims, deliverables, deliverableFiles, taskAttachments, reviews } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import StatusBadge from "@/components/ui/status-badge";
@@ -8,6 +8,9 @@ import ClaimActions from "@/components/tasks/claim-actions";
 import DeliverableActions from "@/components/tasks/deliverable-actions";
 import ReviewForm from "@/components/tasks/review-form";
 import CancelTaskButton from "@/components/tasks/cancel-task-button";
+import FilePreview from "@/components/tasks/file-preview";
+import WebsitePreview from "@/components/tasks/website-preview";
+import FileUpload from "@/components/tasks/file-upload";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -60,6 +63,25 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     .from(reviews)
     .where(eq(reviews.taskId, task.task.id))
     .then((r) => r[0] || null);
+
+  // Fetch deliverable files
+  const allDeliverableFiles = taskDeliverables.length > 0
+    ? await db.select().from(deliverableFiles).where(eq(deliverableFiles.taskId, task.task.id))
+    : [];
+
+  const filesByDeliverable = new Map<number, typeof allDeliverableFiles>();
+  for (const f of allDeliverableFiles) {
+    const arr = filesByDeliverable.get(f.deliverableId) || [];
+    arr.push(f);
+    filesByDeliverable.set(f.deliverableId, arr);
+  }
+
+  // Fetch task attachments
+  const attachments = await db
+    .select()
+    .from(taskAttachments)
+    .where(eq(taskAttachments.taskId, task.task.id))
+    .orderBy(taskAttachments.createdAt);
 
   const t = task.task;
 
@@ -115,6 +137,36 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               {t.requirements}
             </p>
           </>
+        )}
+      </div>
+
+      {/* Task Attachments */}
+      <div className="mb-6">
+        <h2 className="mb-3 text-sm font-semibold text-gray-500">
+          Reference Files ({attachments.length})
+        </h2>
+        {attachments.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {attachments.map((a) => (
+              <div key={a.id} className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{a.originalName}</span>
+                  <span className="text-xs text-gray-500">
+                    {a.sizeBytes < 1024 * 1024
+                      ? `${(a.sizeBytes / 1024).toFixed(1)} KB`
+                      : `${(a.sizeBytes / (1024 * 1024)).toFixed(1)} MB`}
+                  </span>
+                </div>
+                <span className="text-xs text-gray-400">{a.mimeType}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {["open", "claimed"].includes(t.status) && (
+          <FileUpload taskId={t.id} existingCount={attachments.length} maxFiles={5} />
+        )}
+        {attachments.length === 0 && !["open", "claimed"].includes(t.status) && (
+          <p className="text-sm text-gray-500">No reference files attached.</p>
         )}
       </div>
 
@@ -180,36 +232,63 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           </p>
         ) : (
           <div className="space-y-4">
-            {taskDeliverables.map((d) => (
-              <div
-                key={d.id}
-                className="rounded-lg border border-gray-200 bg-white p-4"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-sm font-medium">
-                    Revision #{d.revisionNumber}
-                  </p>
-                  <StatusBadge status={d.status} />
-                </div>
-                <div className="mb-3 max-h-60 overflow-y-auto rounded bg-gray-50 p-3">
-                  <pre className="whitespace-pre-wrap text-sm">{d.content}</pre>
-                </div>
-                {d.revisionNotes && (
-                  <div className="mb-3 rounded bg-orange-50 p-3">
-                    <p className="text-xs font-medium text-orange-700">Revision Notes:</p>
-                    <p className="text-sm text-orange-800">{d.revisionNotes}</p>
+            {taskDeliverables.map((d) => {
+              const dFiles = (filesByDeliverable.get(d.id) || []).map((f) => ({
+                id: f.id,
+                name: f.originalName,
+                mime_type: f.mimeType,
+                file_type: f.fileType,
+                size_bytes: f.sizeBytes,
+                public_url: f.publicUrl,
+              }));
+              const hasWebFiles = dFiles.some((f) => f.file_type === "html");
+
+              return (
+                <div
+                  key={d.id}
+                  className="rounded-lg border border-gray-200 bg-white p-4"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      Revision #{d.revisionNumber}
+                    </p>
+                    <StatusBadge status={d.status} />
                   </div>
-                )}
-                {d.status === "submitted" && t.status === "delivered" && (
-                  <DeliverableActions
-                    deliverableId={d.id}
-                    taskId={t.id}
-                    revisionNumber={d.revisionNumber}
-                    maxRevisions={t.maxRevisions}
-                  />
-                )}
-              </div>
-            ))}
+                  {d.content && (
+                    <div className="mb-3 max-h-60 overflow-y-auto rounded bg-gray-50 p-3">
+                      <pre className="whitespace-pre-wrap text-sm">{d.content}</pre>
+                    </div>
+                  )}
+                  {hasWebFiles && (
+                    <div className="mb-3">
+                      <WebsitePreview files={dFiles} />
+                    </div>
+                  )}
+                  {dFiles.length > 0 && (
+                    <div className="mb-3">
+                      <p className="mb-2 text-xs font-medium text-gray-500">
+                        Files ({dFiles.length})
+                      </p>
+                      <FilePreview files={dFiles} />
+                    </div>
+                  )}
+                  {d.revisionNotes && (
+                    <div className="mb-3 rounded bg-orange-50 p-3">
+                      <p className="text-xs font-medium text-orange-700">Revision Notes:</p>
+                      <p className="text-sm text-orange-800">{d.revisionNotes}</p>
+                    </div>
+                  )}
+                  {d.status === "submitted" && t.status === "delivered" && (
+                    <DeliverableActions
+                      deliverableId={d.id}
+                      taskId={t.id}
+                      revisionNumber={d.revisionNumber}
+                      maxRevisions={t.maxRevisions}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
