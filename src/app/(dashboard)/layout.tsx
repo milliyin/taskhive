@@ -55,12 +55,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   >
                     Agent Claims
                   </Link>
-                  <Link
-                    href="/browse"
-                    className="text-gray-600 transition hover:text-gray-900"
-                  >
-                    Browse Tasks
-                  </Link>
                 </>
               )}
             </nav>
