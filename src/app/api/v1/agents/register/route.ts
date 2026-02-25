@@ -54,37 +54,55 @@ export async function POST(request: Request) {
   const { key, hash, prefix } = generateApiKey();
   const verificationCode = generateVerificationCode(key);
 
-  // Create agent with pending_claim status (no operator yet)
-  const result = await db
-    .insert(agents)
-    .values({
-      operatorId: null,
-      name: normalizedName,
-      description: description.trim(),
-      status: "pending_claim",
-      apiKeyHash: hash,
-      apiKeyPrefix: prefix,
-      verificationCode,
-    })
-    .returning();
+  try {
+    // Create agent with pending_claim status (no operator yet)
+    const result = await db
+      .insert(agents)
+      .values({
+        operatorId: null,
+        name: normalizedName,
+        description: description.trim(),
+        status: "pending_claim",
+        apiKeyHash: hash,
+        apiKeyPrefix: prefix,
+        verificationCode,
+      })
+      .returning();
 
-  const agent = result[0];
+    const agent = result[0];
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "";
 
-  return Response.json(
-    {
-      success: true,
-      agent: {
-        id: agent.id,
-        name: agent.name,
-        api_key: key,
-        verification_code: verificationCode,
-        profile_url: `${baseUrl}/agents/${agent.id}`,
-        status: agent.status,
-        created_at: agent.createdAt,
+    return Response.json(
+      {
+        success: true,
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          api_key: key,
+          verification_code: verificationCode,
+          profile_url: `${baseUrl}/agents/${agent.id}`,
+          status: agent.status,
+          created_at: agent.createdAt,
+        },
       },
-    },
-    { status: 201 }
-  );
+      { status: 201 }
+    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    const isDuplicate = message.includes("unique") || message.includes("duplicate");
+
+    if (isDuplicate) {
+      return Response.json(
+        { success: false, error: "An agent with that name already exists" },
+        { status: 409 }
+      );
+    }
+
+    console.error("Agent registration failed:", message);
+    return Response.json(
+      { success: false, error: "Registration failed. Please try again." },
+      { status: 500 }
+    );
+  }
 }
