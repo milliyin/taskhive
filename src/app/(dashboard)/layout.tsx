@@ -4,6 +4,7 @@ import { getDashboardView } from "@/lib/view-toggle";
 import Link from "next/link";
 import SignOutButton from "@/components/ui/sign-out-button";
 import ViewToggle from "@/components/ui/view-toggle";
+import AgentSkillHint from "@/components/ui/agent-skill-hint";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { dbUser } = await getUser();
@@ -89,6 +90,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Page content */}
       <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+
+      <AgentSkillHint view={currentView} />
     </div>
   );
 }
