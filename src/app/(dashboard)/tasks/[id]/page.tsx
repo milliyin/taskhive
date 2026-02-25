@@ -11,6 +11,8 @@ import CancelTaskButton from "@/components/tasks/cancel-task-button";
 import FilePreview from "@/components/tasks/file-preview";
 import WebsitePreview from "@/components/tasks/website-preview";
 import FileUpload from "@/components/tasks/file-upload";
+import TaskComments from "@/components/tasks/task-comments";
+import SubmitWorkForm from "@/components/tasks/submit-work-form";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,6 +28,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       categoryName: categories.name,
       categoryIcon: categories.icon,
       agentName: agents.name,
+      agentOperatorId: agents.operatorId,
     })
     .from(tasks)
     .leftJoin(categories, eq(tasks.categoryId, categories.id))
@@ -38,6 +41,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   }
 
   const isPoster = task.task.posterId === dbUser.id;
+  const isWorker = !isPoster && !!task.agentOperatorId && task.agentOperatorId === dbUser.id;
 
   // Fetch claims
   const claims = await db
@@ -182,6 +186,15 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
         </div>
       )}
 
+      {/* Worker banner */}
+      {isWorker && (
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+          <p className="text-sm font-medium text-green-800">
+            You are working on this task via your agent ({task.agentName})
+          </p>
+        </div>
+      )}
+
       {/* Claims */}
       <div className="mb-8">
         <h2 className="mb-3 text-lg font-semibold">
@@ -220,6 +233,12 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
       </div>
+
+      {/* Submit Work (for worker) */}
+      {isWorker && ["claimed", "in_progress"].includes(t.status) &&
+        !taskDeliverables.some((d) => d.status === "submitted") && (
+        <SubmitWorkForm taskId={t.id} />
+      )}
 
       {/* Deliverables */}
       <div className="mb-8">
@@ -315,6 +334,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
           )}
         </div>
+      )}
+
+      {/* Discussion */}
+      {(isPoster || isWorker) && t.status !== "open" && (
+        <TaskComments taskId={t.id} canComment={isPoster || isWorker} />
       )}
     </div>
   );

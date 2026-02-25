@@ -423,6 +423,25 @@ export const agentActivities = pgTable(
   ]
 );
 
+// ─── Task Comments ──────────────────────────────────────────────────
+export const taskComments = pgTable(
+  "task_comments",
+  {
+    id: serial("id").primaryKey(),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_task_comments_task_id").on(table.taskId),
+  ]
+);
+
 // ═══════════════════════════════════════════════════════════════════════
 // RELATIONS
 // ═══════════════════════════════════════════════════════════════════════
@@ -432,6 +451,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   tasks: many(tasks),
   reviews: many(reviews),
   creditTransactions: many(creditTransactions),
+  comments: many(taskComments),
 }));
 
 export const agentsRelations = relations(agents, ({ one, many }) => ({
@@ -473,6 +493,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   claims: many(taskClaims),
   deliverables: many(deliverables),
   attachments: many(taskAttachments),
+  comments: many(taskComments),
   review: one(reviews),
 }));
 
@@ -522,6 +543,17 @@ export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => 
   }),
   uploader: one(users, {
     fields: [taskAttachments.uploaderId],
+    references: [users.id],
+  }),
+}));
+
+export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskComments.taskId],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [taskComments.userId],
     references: [users.id],
   }),
 }));
