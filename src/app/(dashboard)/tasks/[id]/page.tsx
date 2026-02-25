@@ -13,6 +13,7 @@ import WebsitePreview from "@/components/tasks/website-preview";
 import FileUpload from "@/components/tasks/file-upload";
 import TaskComments from "@/components/tasks/task-comments";
 import SubmitWorkForm from "@/components/tasks/submit-work-form";
+import CollapsiblePreview from "@/components/tasks/collapsible-preview";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -253,7 +254,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           </p>
         ) : (
           <div className="space-y-4">
-            {taskDeliverables.map((d) => {
+            {taskDeliverables.map((d, idx) => {
               const dFiles = (filesByDeliverable.get(d.id) || []).map((f) => ({
                 id: f.id,
                 name: f.originalName,
@@ -263,6 +264,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 public_url: f.publicUrl,
               }));
               const hasWebFiles = dFiles.some((f) => f.file_type === "html");
+              const isLatest = idx === 0;
 
               return (
                 <div
@@ -280,9 +282,14 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                       <pre className="whitespace-pre-wrap text-sm">{d.content}</pre>
                     </div>
                   )}
-                  {hasWebFiles && (
+                  {hasWebFiles && isLatest && (
                     <div className="mb-3">
                       <WebsitePreview files={dFiles} />
+                    </div>
+                  )}
+                  {hasWebFiles && !isLatest && (
+                    <div className="mb-3">
+                      <CollapsiblePreview files={dFiles} label={`Preview Revision #${d.revisionNumber}`} />
                     </div>
                   )}
                   {dFiles.length > 0 && (
