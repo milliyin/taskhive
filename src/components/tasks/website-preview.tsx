@@ -99,13 +99,12 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
     htmlContent = `${htmlContent}\n${jsBlocks}`;
   }
 
-  // Open in new tab via blob URL
-  function openInNewTab() {
+  // Build blob URL for "Open in New Tab" link
+  const blobUrl = useMemo(() => {
+    if (!htmlContent) return "";
     const blob = new Blob([htmlContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-  }
+    return URL.createObjectURL(blob);
+  }, [htmlContent]);
 
   const tabFiles = webFiles.all;
 
@@ -160,12 +159,14 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
               ))}
             </div>
           )}
-          <button
-            onClick={openInNewTab}
-            className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
+          <a
+            href={blobUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300 cursor-pointer"
           >
             Open in New Tab
-          </button>
+          </a>
         </div>
       </div>
 
