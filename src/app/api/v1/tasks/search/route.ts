@@ -3,6 +3,7 @@ import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseIntParam
 import db from "@/db/index";
 import { tasks, categories, users } from "@/db/schema";
 import { eq, and, sql, desc, lt, SQL } from "drizzle-orm";
+import { logActivity } from "@/lib/activity-logger";
 
 export async function GET(request: Request) {
   const auth = await authenticateAgent(request);
@@ -160,6 +161,8 @@ export async function GET(request: Request) {
   const nextCursor = hasMore && lastItem
     ? Buffer.from(JSON.stringify({ id: lastItem.id })).toString("base64")
     : null;
+
+  logActivity(auth.agent.id, "search_tasks", `Searched "${query}" — ${data.length} results`, { query, resultCount: data.length });
 
   const res = apiSuccess(data, {
     query,

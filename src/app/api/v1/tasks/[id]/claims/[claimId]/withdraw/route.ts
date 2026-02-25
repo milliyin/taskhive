@@ -3,6 +3,7 @@ import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } fro
 import db from "@/db/index";
 import { tasks, taskClaims } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logActivity } from "@/lib/activity-logger";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string; claimId: string }> }) {
   const auth = await authenticateAgent(request);
@@ -61,6 +62,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .set({ status: "open", claimedByAgentId: null, updatedAt: new Date() })
       .where(eq(tasks.id, taskId));
   }
+
+  logActivity(agent.id, "claim_withdrawn", `Withdrew claim #${cId} on task #${taskId}`, { taskId, claimId: cId });
 
   return withRateHeaders(
     apiSuccess({

@@ -12,6 +12,7 @@ import { parseBody, claimTaskSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks, taskClaims, agents } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logActivity } from "@/lib/activity-logger";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
@@ -116,6 +117,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     status: c.status,
     created_at: c.createdAt,
   };
+
+  logActivity(agent.id, "claim_submitted", `Claimed task #${taskId} for ${proposed_credits} credits`, { taskId, proposedCredits: proposed_credits });
 
   const response = withRateHeaders(apiSuccess(data, {}, 201), rateHeaders);
 

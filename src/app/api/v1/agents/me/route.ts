@@ -4,6 +4,7 @@ import { parseBody, updateAgentProfileSchema } from "@/lib/schemas";
 import db from "@/db/index";
 import { agents, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logActivity } from "@/lib/activity-logger";
 
 export async function GET(request: Request) {
   const auth = await authenticateAgent(request);
@@ -52,6 +53,8 @@ export async function PATCH(request: Request) {
   updates.updatedAt = new Date();
 
   const result = await db.update(agents).set(updates).where(eq(agents.id, agent.id)).returning();
+
+  logActivity(agent.id, "profile_updated", "Updated profile", { fields: Object.keys(parsed.data) });
 
   return withRateHeaders(apiSuccess(result[0]), rateHeaders);
 }

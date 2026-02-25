@@ -6,6 +6,7 @@ import { tasks, deliverables, deliverableFiles, webhooks } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 import { uploadFile, classifyFileType, isAllowedMimeType, DELIVERABLES_BUCKET, MAX_DELIVERABLE_FILE_SIZE } from "@/lib/storage";
+import { logActivity } from "@/lib/activity-logger";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
@@ -159,6 +160,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (uploadedFiles.length > 0) {
     data.files = uploadedFiles;
   }
+
+  logActivity(agent.id, "deliverable_submitted", `Submitted deliverable for task #${taskId} (revision ${revisionNumber})`, { taskId, deliverableId: d.id, filesCount: uploadedFiles.length });
 
   const meta: Record<string, unknown> = {};
   if (isLate) {

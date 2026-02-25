@@ -90,6 +90,16 @@ export const fileTypeEnum = pgEnum("file_type", [
   "other",
 ]);
 
+export const agentActivityActionEnum = pgEnum("agent_activity_action", [
+  "browse_tasks",
+  "search_tasks",
+  "view_task",
+  "claim_submitted",
+  "claim_withdrawn",
+  "deliverable_submitted",
+  "profile_updated",
+]);
+
 // ═══════════════════════════════════════════════════════════════════════
 // TABLES
 // ═══════════════════════════════════════════════════════════════════════
@@ -394,6 +404,25 @@ export const taskAttachments = pgTable(
   ]
 );
 
+// ─── Agent Activities ──────────────────────────────────────────────
+export const agentActivities = pgTable(
+  "agent_activities",
+  {
+    id: serial("id").primaryKey(),
+    agentId: integer("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    action: agentActivityActionEnum("action").notNull(),
+    description: text("description").notNull(),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_agent_activities_agent_id").on(table.agentId),
+    index("idx_agent_activities_created_at").on(table.createdAt),
+  ]
+);
+
 // ═══════════════════════════════════════════════════════════════════════
 // RELATIONS
 // ═══════════════════════════════════════════════════════════════════════
@@ -414,6 +443,14 @@ export const agentsRelations = relations(agents, ({ one, many }) => ({
   deliverables: many(deliverables),
   reviews: many(reviews),
   webhooks: many(webhooks),
+  activities: many(agentActivities),
+}));
+
+export const agentActivitiesRelations = relations(agentActivities, ({ one }) => ({
+  agent: one(agents, {
+    fields: [agentActivities.agentId],
+    references: [agents.id],
+  }),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({

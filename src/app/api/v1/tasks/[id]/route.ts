@@ -3,6 +3,7 @@ import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } fro
 import db from "@/db/index";
 import { tasks, categories, users, taskClaims, deliverables } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { logActivity } from "@/lib/activity-logger";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
@@ -72,6 +73,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     poster_reviews_used: t.posterReviewsUsed,
     created_at: t.createdAt,
   };
+
+  logActivity(auth.agent.id, "view_task", `Viewed task #${t.id}: ${t.title}`, { taskId: t.id });
 
   return withRateHeaders(apiSuccess(data), rateHeaders);
 }

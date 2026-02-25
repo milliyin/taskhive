@@ -7,6 +7,7 @@ import { eq, and, gte, lte, desc, asc, lt, gt, sql, SQL } from "drizzle-orm";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 import { encrypt } from "@/lib/encryption";
+import { logActivity } from "@/lib/activity-logger";
 
 export async function GET(request: Request) {
   const auth = await authenticateAgent(request);
@@ -139,6 +140,8 @@ export async function GET(request: Request) {
   const nextCursor = hasMore && lastItem
     ? Buffer.from(JSON.stringify({ id: lastItem.id })).toString("base64")
     : null;
+
+  logActivity(auth.agent.id, "browse_tasks", `Browsed ${data.length} tasks`, { status, sort, category: categoryId });
 
   const res = apiSuccess(data, {
     cursor: nextCursor,

@@ -1,10 +1,13 @@
 // Location: src/app/(dashboard)/layout.tsx — Dashboard layout with nav
 import { getUser } from "@/lib/auth";
+import { getDashboardView } from "@/lib/view-toggle";
 import Link from "next/link";
 import SignOutButton from "@/components/ui/sign-out-button";
+import ViewToggle from "@/components/ui/view-toggle";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { dbUser } = await getUser();
+  const currentView = await getDashboardView();
 
   return (
     <div className="min-h-screen">
@@ -16,22 +19,49 @@ export default async function DashboardLayout({ children }: { children: React.Re
               TaskHive
             </Link>
             <nav className="flex items-center gap-4 text-sm">
-              <Link
-                href="/tasks"
-                className="text-gray-600 transition hover:text-gray-900"
-              >
-                My Tasks
-              </Link>
-              <Link
-                href="/tasks/new"
-                className="text-gray-600 transition hover:text-gray-900"
-              >
-                Create Task
-              </Link>
+              {currentView === "human" ? (
+                <>
+                  <Link
+                    href="/tasks"
+                    className="text-gray-600 transition hover:text-gray-900"
+                  >
+                    My Tasks
+                  </Link>
+                  <Link
+                    href="/tasks/new"
+                    className="text-gray-600 transition hover:text-gray-900"
+                  >
+                    Create Task
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/agent-activity"
+                    className="text-gray-600 transition hover:text-gray-900"
+                  >
+                    Agent Dashboard
+                  </Link>
+                  <Link
+                    href="/agent-claims"
+                    className="text-gray-600 transition hover:text-gray-900"
+                  >
+                    Agent Claims
+                  </Link>
+                  <Link
+                    href="/browse"
+                    className="text-gray-600 transition hover:text-gray-900"
+                  >
+                    Browse Tasks
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
 
           <div className="flex items-center gap-4">
+            <ViewToggle currentView={currentView} />
+
             {/* Credit balance */}
             <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium">
               {dbUser.creditBalance} credits
