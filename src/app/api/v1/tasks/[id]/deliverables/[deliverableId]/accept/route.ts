@@ -67,7 +67,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       });
 
       await db.insert(creditTransactions).values({
-        userId: operator.id, amount: fee, type: "platform_fee", taskId: task.id,
+        userId: operator.id, amount: -fee, type: "platform_fee", taskId: task.id,
         description: `Platform fee (${PLATFORM.PLATFORM_FEE_PERCENT}%) for task: ${task.title}`, balanceAfter: newBalance,
       });
     }

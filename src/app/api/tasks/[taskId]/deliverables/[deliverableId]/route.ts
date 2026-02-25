@@ -94,7 +94,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
         // Log platform fee (tracking only)
         await db.insert(creditTransactions).values({
           userId: operator.id,
-          amount: fee,
+          amount: -fee,
           type: "platform_fee",
           taskId: task.id,
           description: `Platform fee (${PLATFORM.PLATFORM_FEE_PERCENT}%) for task: ${task.title}`,
