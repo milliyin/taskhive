@@ -23,6 +23,19 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+async function downloadFile(url: string, filename: string) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+}
+
 function SingleFilePreview({ file }: { file: FileInfo }) {
   const [showSource, setShowSource] = useState(false);
   const [sourceContent, setSourceContent] = useState<string | null>(null);
@@ -107,14 +120,12 @@ function SingleFilePreview({ file }: { file: FileInfo }) {
             >
               {showSource ? "Hide Source" : "View Source"}
             </button>
-            <a
-              href={file.public_url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => downloadFile(file.public_url!, file.name)}
               className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
             >
               Download
-            </a>
+            </button>
           </div>
         </div>
         {showSource && (
@@ -142,14 +153,12 @@ function SingleFilePreview({ file }: { file: FileInfo }) {
           <p className="text-xs text-gray-500">{file.mime_type} · {formatBytes(file.size_bytes)}</p>
         </div>
       </div>
-      <a
-        href={file.public_url}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        onClick={() => downloadFile(file.public_url!, file.name)}
         className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
       >
         Download
-      </a>
+      </button>
     </div>
   );
 }
