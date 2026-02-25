@@ -29,15 +29,24 @@ export default function BrowseTasksPage() {
   const [loading, setLoading] = useState(true);
 
   // Filters
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState("newest");
   const [minBudget, setMinBudget] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
+    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
     if (categoryFilter) params.set("category", categoryFilter);
     if (sort) params.set("sort", sort);
     if (minBudget) params.set("min_budget", minBudget);
@@ -54,7 +63,7 @@ export default function BrowseTasksPage() {
       // ignore
     }
     setLoading(false);
-  }, [categoryFilter, sort, minBudget, offset]);
+  }, [debouncedSearch, categoryFilter, sort, minBudget, offset]);
 
   useEffect(() => {
     fetchTasks();
@@ -63,11 +72,22 @@ export default function BrowseTasksPage() {
   // Reset offset when filters change
   useEffect(() => {
     setOffset(0);
-  }, [categoryFilter, sort, minBudget]);
+  }, [debouncedSearch, categoryFilter, sort, minBudget]);
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Browse Tasks</h1>
+
+      {/* Search */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search tasks by title or description..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-3">

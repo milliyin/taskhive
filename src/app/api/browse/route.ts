@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   await getUser(); // auth check
 
   const { searchParams } = request.nextUrl;
+  const query = searchParams.get("q");
   const categoryId = searchParams.get("category");
   const minBudget = searchParams.get("min_budget");
   const maxBudget = searchParams.get("max_budget");
@@ -17,6 +18,25 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get("offset") || "0", 10) || 0;
 
   const conditions: SQL[] = [eq(tasks.status, "open")];
+
+  // Full-text search
+  if (query && query.trim().length > 0) {
+    const sanitized = query
+      .trim()
+      .replace(/[^\w\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 0)
+      .map((w) => `${w}:*`)
+      .join(" & ");
+    if (sanitized) {
+      conditions.push(
+        sql`(
+          to_tsvector('english', coalesce(${tasks.title}, '') || ' ' || coalesce(${tasks.description}, ''))
+          @@ to_tsquery('english', ${sanitized})
+        )`
+      );
+    }
+  }
 
   if (categoryId) {
     const id = parseInt(categoryId, 10);

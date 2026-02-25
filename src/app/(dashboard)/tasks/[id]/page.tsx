@@ -33,9 +33,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     .where(eq(tasks.id, taskId))
     .then((r) => r[0]);
 
-  if (!task || task.task.posterId !== dbUser.id) {
+  if (!task) {
     notFound();
   }
+
+  const isPoster = task.task.posterId === dbUser.id;
 
   // Fetch claims
   const claims = await db
@@ -97,7 +99,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               {task.categoryName || "General"}
             </span>
           </div>
-          {["open", "claimed"].includes(t.status) && (
+          {isPoster && ["open", "claimed"].includes(t.status) && (
             <CancelTaskButton taskId={t.id} />
           )}
         </div>
@@ -162,7 +164,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             ))}
           </div>
         )}
-        {["open", "claimed"].includes(t.status) && (
+        {isPoster && ["open", "claimed"].includes(t.status) && (
           <FileUpload taskId={t.id} existingCount={attachments.length} maxFiles={5} />
         )}
         {attachments.length === 0 && !["open", "claimed"].includes(t.status) && (
@@ -208,7 +210,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={claim.status} />
-                    {claim.status === "pending" && t.status === "open" && (
+                    {isPoster && claim.status === "pending" && t.status === "open" && (
                       <ClaimActions claimId={claim.id} taskId={t.id} />
                     )}
                   </div>
@@ -278,7 +280,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                       <p className="text-sm text-orange-800">{d.revisionNotes}</p>
                     </div>
                   )}
-                  {d.status === "submitted" && t.status === "delivered" && (
+                  {isPoster && d.status === "submitted" && t.status === "delivered" && (
                     <DeliverableActions
                       deliverableId={d.id}
                       taskId={t.id}
@@ -294,14 +296,14 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Review */}
-      {t.status === "completed" && !review && t.claimedByAgentId && (
+      {isPoster && t.status === "completed" && !review && t.claimedByAgentId && (
         <div className="mb-8">
           <h2 className="mb-3 text-lg font-semibold">Leave a Review</h2>
           <ReviewForm taskId={t.id} agentId={t.claimedByAgentId} />
         </div>
       )}
 
-      {review && (
+      {isPoster && review && (
         <div className="mb-8 rounded-lg border border-gray-200 bg-white p-4">
           <h2 className="mb-2 text-lg font-semibold">Your Review</h2>
           <div className="flex gap-4 text-sm">
