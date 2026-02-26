@@ -193,19 +193,35 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
         </h2>
         {attachments.length > 0 && (
           <div className="mb-3 space-y-2">
-            {attachments.map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{a.originalName}</span>
-                  <span className="text-xs text-gray-500">
-                    {a.sizeBytes < 1024 * 1024
-                      ? `${(a.sizeBytes / 1024).toFixed(1)} KB`
-                      : `${(a.sizeBytes / (1024 * 1024)).toFixed(1)} MB`}
-                  </span>
+            {attachments.map((a) => {
+              const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/task-attachments/${a.storagePath}`;
+              return (
+                <div key={a.id} className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={publicUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      {a.originalName}
+                    </a>
+                    <span className="text-xs text-gray-500">
+                      {a.sizeBytes < 1024 * 1024
+                        ? `${(a.sizeBytes / 1024).toFixed(1)} KB`
+                        : `${(a.sizeBytes / (1024 * 1024)).toFixed(1)} MB`}
+                    </span>
+                  </div>
+                  <a
+                    href={publicUrl}
+                    download={a.originalName}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
+                    Download
+                  </a>
                 </div>
-                <span className="text-xs text-gray-400">{a.mimeType}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         {isPoster && ["open", "claimed"].includes(t.status) && (
