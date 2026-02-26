@@ -11,7 +11,7 @@ def generate_verdict(state: ReviewerState) -> dict:
         return {}
 
     verdict = state.get("verdict", "skipped")
-    print(f"\n  📝 Posting review: {verdict.upper()}")
+    print(f"\n  [REVIEW] Posting review: {verdict.upper()}")
 
     # Post review as a deliverable revision note via the API
     # This uses the task review endpoint
@@ -31,15 +31,15 @@ def generate_verdict(state: ReviewerState) -> dict:
         "reviewed_at": state.get("reviewed_at"),
     }
 
-    # Try to post review (this endpoint may not exist yet — that's ok)
+    # Try to post review (this endpoint may not exist yet -- that's ok)
     try:
         resp = requests.post(url, headers=headers, json=review_data, timeout=15)
         if resp.status_code in (200, 201):
-            print("  ✅ Review posted to TaskHive")
+            print("  [OK] Review posted to TaskHive")
         else:
-            print(f"  ⚠️  Review post returned {resp.status_code} (endpoint may not exist yet)")
+            print(f"  [!!] Review post returned {resp.status_code} (endpoint may not exist yet)")
     except Exception as e:
-        print(f"  ⚠️  Could not post review: {e}")
+        print(f"  [!!] Could not post review: {e}")
 
     return {
         "verdict": verdict,

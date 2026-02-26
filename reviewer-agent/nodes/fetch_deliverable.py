@@ -9,7 +9,7 @@ def fetch_deliverable(state: ReviewerState) -> dict:
     if state.get("error"):
         return {}
 
-    print(f"  📦 Fetching deliverable #{state['deliverable_id']}...")
+    print(f"  [DEL] Fetching deliverable #{state['deliverable_id']}...")
 
     base = state["taskhive_url"]
     task_id = state["task_id"]
@@ -43,12 +43,12 @@ def fetch_deliverable(state: ReviewerState) -> dict:
     files = deliverable.get("files", [])
     html_urls = [f["public_url"] for f in files if f.get("file_type") == "html" and f.get("public_url")]
 
-    print(f"  ✅ Deliverable found: revision #{deliverable.get('revision_number', 1)}")
-    print(f"     Content length: {len(content)} chars")
+    print(f"  [OK] Deliverable found: revision #{deliverable.get('revision_number', 1)}")
+    print(f"       Content length: {len(content)} chars")
     if files:
-        print(f"     Files: {len(files)} ({', '.join(f['name'] for f in files[:5])})")
+        print(f"       Files: {len(files)} ({', '.join(f['name'] for f in files[:5])})")
     if html_urls:
-        print(f"     HTML files: {len(html_urls)}")
+        print(f"       HTML files: {len(html_urls)}")
 
     result = {
         "deliverable_content": content,
@@ -68,9 +68,9 @@ def fetch_deliverable(state: ReviewerState) -> dict:
             deploy_status = deploy_data.get("deploy_status")
             if preview_url and deploy_status == "ready":
                 result["deliverable_preview_url"] = preview_url
-                print(f"     Preview URL: {preview_url}")
+                print(f"       Preview URL: {preview_url}")
             elif deploy_status:
-                print(f"     Deploy status: {deploy_status}")
+                print(f"       Deploy status: {deploy_status}")
     except Exception:
         pass  # Deploy status is optional
 

@@ -55,19 +55,19 @@ def browse_url(state: ReviewerState) -> dict:
     urls = unique_urls
 
     if not urls:
-        print("  🔗 No URLs found in deliverable — skipping browser check")
+        print("  [LINK] No URLs found in deliverable -- skipping browser check")
         return {}
 
     api_key = os.environ.get("BROWSERBASE_API_KEY")
     project_id = os.environ.get("BROWSERBASE_PROJECT_ID")
 
     if not api_key or not project_id:
-        print("  🔗 URLs found but BROWSERBASE_API_KEY not set — skipping browser verification")
-        print(f"     URLs detected: {', '.join(urls[:3])}")
+        print("  [LINK] URLs found but BROWSERBASE_API_KEY not set -- skipping browser verification")
+        print(f"         URLs detected: {', '.join(urls[:3])}")
         return {}
 
     target_url = urls[0]
-    print(f"  🌐 Browsing: {target_url}")
+    print(f"  [WEB] Browsing: {target_url}")
 
     try:
         # 1. Create a Browserbase session
@@ -87,10 +87,9 @@ def browse_url(state: ReviewerState) -> dict:
         session_id = session["id"]
         connect_url = session.get("connectUrl", f"wss://connect.browserbase.com?sessionId={session_id}")
 
-        print(f"  ✅ Browserbase session created: {session_id}")
+        print(f"  [OK] Browserbase session created: {session_id}")
 
         # 2. Navigate and take screenshot via Browserbase debug endpoint
-        # Use the session's live URLs endpoint to navigate
         nav_resp = requests.post(
             f"https://www.browserbase.com/v1/sessions/{session_id}/navigate",
             headers={
@@ -123,7 +122,7 @@ def browse_url(state: ReviewerState) -> dict:
             if "image" in content_type:
                 screenshot_b64 = base64.b64encode(screenshot_resp.content).decode("utf-8")
                 page_loaded = True
-                print(f"  📸 Screenshot captured ({len(screenshot_resp.content)} bytes)")
+                print(f"  [OK] Screenshot captured ({len(screenshot_resp.content)} bytes)")
             elif "json" in content_type:
                 data = screenshot_resp.json()
                 screenshot_b64 = data.get("screenshot") or data.get("data")
@@ -140,7 +139,7 @@ def browse_url(state: ReviewerState) -> dict:
             pass
 
         if not page_loaded:
-            print(f"  ❌ Page failed to load: {target_url}")
+            print(f"  [FAIL] Page failed to load: {target_url}")
             return {
                 "feedback": (state.get("feedback", "") +
                              f"\n\n[Browser Check] URL {target_url} failed to load."),
@@ -151,7 +150,7 @@ def browse_url(state: ReviewerState) -> dict:
         provider = state.get("resolved_provider")
 
         if llm_key and provider and screenshot_b64:
-            print("  🤖 Sending screenshot to LLM for visual verification...")
+            print("  [AI] Sending screenshot to LLM for visual verification...")
 
             visual_feedback = verify_screenshot_with_llm(
                 llm_key, provider, screenshot_b64, target_url,
@@ -164,17 +163,17 @@ def browse_url(state: ReviewerState) -> dict:
                 "feedback": f"{existing_feedback}\n\n[Browser Check] {visual_feedback}",
             }
 
-        print(f"  ✅ Page loaded successfully: {target_url}")
+        print(f"  [OK] Page loaded successfully: {target_url}")
         existing_feedback = state.get("feedback", "")
         return {
             "feedback": f"{existing_feedback}\n\n[Browser Check] URL {target_url} loaded successfully.",
         }
 
     except requests.RequestException as e:
-        print(f"  ⚠️  Browserbase error: {e}")
+        print(f"  [!!] Browserbase error: {e}")
         return {}
     except Exception as e:
-        print(f"  ⚠️  Browser check error: {e}")
+        print(f"  [!!] Browser check error: {e}")
         return {}
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TaskHive Reviewer Agent — Entry Point
+TaskHive Reviewer Agent -- Entry Point
 
 Usage:
     python run.py --task-id 42 --deliverable-id 8
@@ -33,26 +33,26 @@ from state import ReviewerState
 
 
 BANNER = """
-╔══════════════════════════════════════════════════════════╗
-║   TaskHive Reviewer Agent — AI-Powered Code Review       ║
-║   Built with LangGraph                                   ║
-╚══════════════════════════════════════════════════════════╝
++----------------------------------------------------------+
+|   TaskHive Reviewer Agent -- AI-Powered Code Review       |
+|   Built with LangGraph                                    |
++----------------------------------------------------------+
 """
 
 
 def run_review(task_id: int, deliverable_id: int, taskhive_url: str, taskhive_api_key: str) -> dict:
     """Run the reviewer agent on a specific deliverable."""
 
-    print(f"\n{'─' * 60}")
+    print(f"\n{'=' * 60}")
     print(f"  Reviewing Task #{task_id} / Deliverable #{deliverable_id}")
-    print(f"{'─' * 60}")
+    print(f"{'=' * 60}")
 
     initial_state: ReviewerState = {
         "task_id": task_id,
         "deliverable_id": deliverable_id,
         "taskhive_url": taskhive_url,
         "taskhive_api_key": taskhive_api_key,
-        # All other fields start as None — populated by the graph nodes
+        # All other fields start as None -- populated by the graph nodes
         "task_title": None,
         "task_description": None,
         "task_requirements": None,
@@ -90,16 +90,16 @@ def run_review(task_id: int, deliverable_id: int, taskhive_url: str, taskhive_ap
     result = reviewer_graph.invoke(initial_state)
 
     # Print summary
-    print(f"\n{'═' * 60}")
+    print(f"\n{'=' * 60}")
     verdict = result.get("verdict", "error")
     if verdict == "pass":
-        print("  🎉 VERDICT: PASS — Task auto-completed, credits flowed!")
+        print("  VERDICT: PASS -- Task auto-completed, credits flowed!")
     elif verdict == "fail":
-        print("  ❌ VERDICT: FAIL — Revision requested")
+        print("  VERDICT: FAIL -- Revision requested")
     elif verdict == "skipped":
-        print("  ⏭️  VERDICT: SKIPPED — No LLM key, manual review needed")
+        print("  VERDICT: SKIPPED -- No LLM key, manual review needed")
     else:
-        print(f"  🛑 ERROR: {result.get('error', 'Unknown error')}")
+        print(f"  ERROR: {result.get('error', 'Unknown error')}")
 
     if result.get("feedback"):
         print(f"\n  Feedback: {result['feedback'][:200]}...")
@@ -107,15 +107,15 @@ def run_review(task_id: int, deliverable_id: int, taskhive_url: str, taskhive_ap
         print(f"  Scores: {json.dumps(result['scores'])}")
     if result.get("llm_model_used"):
         print(f"  Model: {result['llm_model_used']}")
-    print(f"{'═' * 60}")
+    print(f"{'=' * 60}")
 
     return result
 
 
 def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: int = 30):
     """Poll TaskHive for new submitted deliverables and review them."""
-    print("  🔄 Polling mode — checking for new deliverables every", interval, "seconds")
-    print("     Press Ctrl+C to stop\n")
+    print("  [POLL] Polling mode -- checking for new deliverables every", interval, "seconds")
+    print("         Press Ctrl+C to stop\n")
 
     reviewed = set()
     headers = {"Authorization": f"Bearer {taskhive_api_key}"}
@@ -148,19 +148,19 @@ def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: in
                         deliverables_data = del_resp.json().get("data", [])
                         for d in deliverables_data:
                             if d.get("status") == "submitted" and d["id"] not in reviewed:
-                                print(f"\n  🆕 New deliverable found: Task #{task_id}, Deliverable #{d['id']}")
+                                print(f"\n  [NEW] New deliverable found: Task #{task_id}, Deliverable #{d['id']}")
                                 run_review(task_id, d["id"], taskhive_url, taskhive_api_key)
                                 reviewed.add(d["id"])
             else:
-                print(f"  ⚠️  Tasks fetch returned {resp.status_code}")
+                print(f"  [!!] Tasks fetch returned {resp.status_code}")
 
             time.sleep(interval)
 
         except KeyboardInterrupt:
-            print("\n  👋 Polling stopped")
+            print("\n  Polling stopped")
             break
         except Exception as e:
-            print(f"  ⚠️  Poll error: {e}")
+            print(f"  [!!] Poll error: {e}")
             time.sleep(interval)
 
 
@@ -168,9 +168,9 @@ def start_webhook_server(taskhive_url: str, taskhive_api_key: str, webhook_secre
     """Start a Flask server that listens for TaskHive webhook events."""
     from webhook_server import create_webhook_app
 
-    print(f"  🌐 Webhook mode — listening on http://0.0.0.0:{port}/webhook")
-    print(f"     Health check: http://0.0.0.0:{port}/health")
-    print("     Press Ctrl+C to stop\n")
+    print(f"  [WEBHOOK] Webhook mode -- listening on http://0.0.0.0:{port}/webhook")
+    print(f"            Health check: http://0.0.0.0:{port}/health")
+    print("            Press Ctrl+C to stop\n")
 
     app = create_webhook_app(
         webhook_secret=webhook_secret,
@@ -205,31 +205,31 @@ def main():
     # Resolve API key
     api_key = args.api_key
     if not api_key:
-        print("  ❌ No TaskHive API key provided!")
-        print("     Set TASKHIVE_API_KEY env var or use --api-key flag")
+        print("  [ERROR] No TaskHive API key provided!")
+        print("          Set TASKHIVE_API_KEY env var or use --api-key flag")
         sys.exit(1)
 
     print(f"  Target: {args.url}")
     print(f"  API Key: {api_key[:20]}...")
 
     if args.webhook:
-        # ─── Webhook mode ──────────────────────────────────────────
+        # --- Webhook mode -------------------------------------------
         webhook_secret = args.secret
         if not webhook_secret:
-            print("  ❌ No webhook secret provided!")
-            print("     Set WEBHOOK_SECRET env var or use --secret flag")
-            print("     The secret is returned when you register a webhook via POST /api/v1/webhooks")
+            print("  [ERROR] No webhook secret provided!")
+            print("          Set WEBHOOK_SECRET env var or use --secret flag")
+            print("          The secret is returned when you register a webhook via POST /api/v1/webhooks")
             sys.exit(1)
 
-        print(f"  Webhook Secret: {webhook_secret[:10]}...✅")
+        print(f"  Webhook Secret: {webhook_secret[:10]}... [OK]")
         start_webhook_server(args.url, api_key, webhook_secret, args.port)
 
     elif args.poll:
-        # ─── Poll mode ─────────────────────────────────────────────
+        # --- Poll mode ----------------------------------------------
         poll_for_deliverables(args.url, api_key, args.interval)
 
     elif args.task_id and args.deliverable_id:
-        # ─── Single review mode ────────────────────────────────────
+        # --- Single review mode -------------------------------------
         result = run_review(args.task_id, args.deliverable_id, args.url, api_key)
         sys.exit(0 if result.get("verdict") in ("pass", "fail", "skipped") else 1)
 

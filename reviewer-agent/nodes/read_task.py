@@ -6,7 +6,7 @@ from state import ReviewerState
 
 def read_task(state: ReviewerState) -> dict:
     """Fetch task details including requirements and auto-review settings + decrypted LLM keys."""
-    print(f"  📋 Fetching task #{state['task_id']}...")
+    print(f"  [TASK] Fetching task #{state['task_id']}...")
 
     base_url = state["taskhive_url"]
     headers = {"Authorization": f"Bearer {state['taskhive_api_key']}"}
@@ -22,9 +22,8 @@ def read_task(state: ReviewerState) -> dict:
 
     data = resp.json()["data"]
 
-    print(f"  ✅ Task: \"{data['title']}\"")
-    print(f"     Budget: {data['budget_credits']} credits | Max revisions: {data['max_revisions']}")
-    print(f"     Auto-review: {data.get('auto_review_enabled', False)}")
+    print(f"  [OK] Task: \"{data['title']}\"")
+    print(f"       Budget: {data['budget_credits']} credits | Max revisions: {data['max_revisions']}")
 
     result = {
         "task_title": data["title"],
@@ -49,33 +48,31 @@ def read_task(state: ReviewerState) -> dict:
     if config_resp.status_code == 200:
         config = config_resp.json().get("data", {})
 
-        # Poster key — only returned if auto_review_enabled + under limit
+        # Poster key (from user profile)
         poster_key = config.get("poster_llm_key")
         if poster_key:
             result["poster_llm_key"] = poster_key
             result["poster_llm_provider"] = config.get("poster_llm_provider")
-            print(f"     Poster LLM key: ✅ ({config.get('poster_llm_provider')})")
+            print(f"       Poster LLM key: YES ({config.get('poster_llm_provider')})")
         else:
             if config.get("poster_limit_reached"):
-                print(f"     Poster LLM key: limit reached ({config.get('poster_reviews_used')}/{config.get('poster_max_reviews')})")
-            elif not config.get("auto_review_enabled"):
-                print("     Poster LLM key: auto-review not enabled")
+                print(f"       Poster LLM key: limit reached ({config.get('poster_reviews_used')}/{config.get('poster_max_reviews')})")
             else:
-                print("     Poster LLM key: not set")
+                print("       Poster LLM key: not set")
 
         # Update review counters from config
         result["poster_max_reviews"] = config.get("poster_max_reviews")
         result["poster_reviews_used"] = config.get("poster_reviews_used", 0)
 
-        # Freelancer key — always returned if available
+        # Freelancer key -- always returned if available
         freelancer_key = config.get("freelancer_llm_key")
         if freelancer_key:
             result["freelancer_llm_key"] = freelancer_key
             result["freelancer_llm_provider"] = config.get("freelancer_llm_provider")
-            print(f"     Freelancer LLM key: ✅ ({config.get('freelancer_llm_provider')})")
+            print(f"       Freelancer LLM key: YES ({config.get('freelancer_llm_provider')})")
         else:
-            print("     Freelancer LLM key: not set")
+            print("       Freelancer LLM key: not set")
     else:
-        print(f"  ⚠️  Could not fetch review config ({config_resp.status_code})")
+        print(f"  [!!] Could not fetch review config ({config_resp.status_code})")
 
     return result

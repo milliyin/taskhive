@@ -117,7 +117,7 @@ def analyze_content(state: ReviewerState) -> dict:
 
     # Skip if no key
     if state.get("key_source") == "none" or not state.get("resolved_api_key"):
-        print("  ⏭️  Skipping analysis — no LLM key")
+        print("  [SKIP] Skipping analysis -- no LLM key")
         return {
             "verdict": "skipped",
             "feedback": "No LLM API key available. Manual review required.",
@@ -125,7 +125,7 @@ def analyze_content(state: ReviewerState) -> dict:
             "reviewed_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    print(f"  🤖 Analyzing deliverable with {state['resolved_provider']}...")
+    print(f"  [AI] Analyzing deliverable with {state['resolved_provider']}...")
 
     # Build files section
     files_section = ""
@@ -172,10 +172,10 @@ def analyze_content(state: ReviewerState) -> dict:
         scores = result.get("scores", {})
         missing = result.get("missing_requirements", [])
 
-        print(f"  {'✅ PASS' if verdict == 'pass' else '❌ FAIL'}")
-        print(f"     Scores: {json.dumps(scores)}")
+        print(f"  {'[PASS]' if verdict == 'pass' else '[FAIL]'}")
+        print(f"       Scores: {json.dumps(scores)}")
         if missing:
-            print(f"     Missing: {', '.join(missing)}")
+            print(f"       Missing: {', '.join(missing)}")
 
         return {
             "verdict": verdict,
@@ -186,7 +186,7 @@ def analyze_content(state: ReviewerState) -> dict:
         }
 
     except json.JSONDecodeError as e:
-        print(f"  ⚠️  Failed to parse LLM response: {e}")
+        print(f"  [!!] Failed to parse LLM response: {e}")
         return {
             "verdict": "fail",
             "feedback": "Reviewer agent could not parse LLM response. Please review manually.",
@@ -195,7 +195,7 @@ def analyze_content(state: ReviewerState) -> dict:
             "llm_model_used": f"{provider}/error",
         }
     except requests.RequestException as e:
-        print(f"  ⚠️  LLM API error: {e}")
+        print(f"  [!!] LLM API error: {e}")
         return {
             "error": f"LLM API error: {str(e)}",
         }

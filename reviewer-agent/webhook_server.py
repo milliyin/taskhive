@@ -42,7 +42,7 @@ def create_webhook_app(
         signature = request.headers.get("X-TaskHive-Signature", "")
 
         if not verify_signature(payload, signature):
-            print("  ❌ Webhook signature verification failed — rejecting")
+            print("  [ERROR] Webhook signature verification failed -- rejecting")
             return jsonify({"error": "Invalid signature"}), 401
 
         # Parse event
@@ -56,11 +56,11 @@ def create_webhook_app(
 
         data = body.get("data", {})
 
-        print(f"\n  📨 Webhook received: {event_type} (delivery: {delivery_id})")
+        print(f"\n  [WEBHOOK] Received: {event_type} (delivery: {delivery_id})")
 
         # Only handle deliverable.submitted
         if event_type != "deliverable.submitted":
-            print(f"  ⏭️  Ignoring event: {event_type}")
+            print(f"  [SKIP] Ignoring event: {event_type}")
             return jsonify({"status": "ignored", "event": event_type}), 200
 
         task_id = data.get("task_id")
@@ -69,10 +69,10 @@ def create_webhook_app(
         revision = data.get("revision_number", 1)
 
         if not task_id or not deliverable_id:
-            print("  ⚠️  Missing task_id or deliverable_id in webhook payload")
+            print("  [!!] Missing task_id or deliverable_id in webhook payload")
             return jsonify({"error": "Missing required fields"}), 400
 
-        print(f"  🆕 New deliverable: Task #{task_id} \"{task_title}\" (revision #{revision})")
+        print(f"  [NEW] Deliverable: Task #{task_id} \"{task_title}\" (revision #{revision})")
 
         # Run review in a background thread so we respond to the webhook quickly
         # TaskHive has a 10s timeout on webhook delivery
@@ -80,7 +80,7 @@ def create_webhook_app(
             try:
                 run_review_fn(task_id, deliverable_id, taskhive_url, taskhive_api_key)
             except Exception as e:
-                print(f"  ⚠️  Review failed: {e}")
+                print(f"  [!!] Review failed: {e}")
 
         thread = threading.Thread(target=do_review, daemon=True)
         thread.start()

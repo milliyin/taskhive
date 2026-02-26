@@ -13,14 +13,14 @@ from nodes.complete_task import complete_task
 
 
 def should_continue_after_fetch(state: ReviewerState) -> str:
-    """Route after fetching deliverable — abort on error."""
+    """Route after fetching deliverable -- abort on error."""
     if state.get("error"):
         return "abort"
     return "resolve_key"
 
 
 def should_analyze_or_skip(state: ReviewerState) -> str:
-    """Route after key resolution — skip if no key available."""
+    """Route after key resolution -- skip if no key available."""
     if state.get("error"):
         return "abort"
     if state.get("key_source") == "none":
@@ -29,14 +29,14 @@ def should_analyze_or_skip(state: ReviewerState) -> str:
 
 
 def should_complete_or_revise(state: ReviewerState) -> str:
-    """Route after verdict — complete on PASS, revise on FAIL, skip otherwise."""
+    """Route after verdict -- complete on PASS, revise on FAIL, skip otherwise."""
     if state.get("error"):
         return "abort"
     verdict = state.get("verdict")
     if verdict == "pass":
         return "complete"
     elif verdict == "fail":
-        return "complete"  # complete_task handles FAIL → revision request
+        return "complete"  # complete_task handles FAIL -> revision request
     else:
         return "abort"  # skipped
 
@@ -45,9 +45,9 @@ def abort_node(state: ReviewerState) -> dict:
     """Terminal node for errors or skipped reviews."""
     error = state.get("error")
     if error:
-        print(f"\n  🛑 Aborted: {error}")
+        print(f"\n  [ABORT] {error}")
     else:
-        print("\n  ⏭️  Review skipped (no LLM key available)")
+        print("\n  [SKIP] Review skipped (no LLM key available)")
     return {}
 
 
@@ -56,7 +56,7 @@ def build_graph() -> StateGraph:
 
     graph = StateGraph(ReviewerState)
 
-    # ─── Add nodes ────────────────────────────────────────────────
+    # --- Add nodes --------------------------------------------------
     graph.add_node("read_task", read_task)
     graph.add_node("fetch_deliverable", fetch_deliverable)
     graph.add_node("resolve_api_key", resolve_api_key)
@@ -66,15 +66,15 @@ def build_graph() -> StateGraph:
     graph.add_node("complete_task", complete_task)
     graph.add_node("abort", abort_node)
 
-    # ─── Entry point ──────────────────────────────────────────────
+    # --- Entry point ------------------------------------------------
     graph.set_entry_point("read_task")
 
-    # ─── Edges ────────────────────────────────────────────────────
+    # --- Edges ------------------------------------------------------
 
-    # read_task → fetch_deliverable (always)
+    # read_task -> fetch_deliverable (always)
     graph.add_edge("read_task", "fetch_deliverable")
 
-    # fetch_deliverable → resolve_key OR abort
+    # fetch_deliverable -> resolve_key OR abort
     graph.add_conditional_edges(
         "fetch_deliverable",
         should_continue_after_fetch,
@@ -84,7 +84,7 @@ def build_graph() -> StateGraph:
         },
     )
 
-    # resolve_api_key → analyze OR skip
+    # resolve_api_key -> analyze OR skip
     graph.add_conditional_edges(
         "resolve_api_key",
         should_analyze_or_skip,
@@ -95,11 +95,11 @@ def build_graph() -> StateGraph:
         },
     )
 
-    # analyze_content → browse_url → generate_verdict
+    # analyze_content -> browse_url -> generate_verdict
     graph.add_edge("analyze_content", "browse_url")
     graph.add_edge("browse_url", "generate_verdict")
 
-    # generate_verdict → complete OR revise OR abort
+    # generate_verdict -> complete OR revise OR abort
     graph.add_conditional_edges(
         "generate_verdict",
         should_complete_or_revise,

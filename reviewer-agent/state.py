@@ -6,13 +6,13 @@ from typing import TypedDict, Optional, Literal
 class ReviewerState(TypedDict):
     """State that flows through the LangGraph reviewer agent."""
 
-    # ─── Input ────────────────────────────────────────────────────
+    # --- Input ------------------------------------------------------
     task_id: int
     deliverable_id: int
     taskhive_url: str
     taskhive_api_key: str
 
-    # ─── Task data (fetched) ──────────────────────────────────────
+    # --- Task data (fetched) ----------------------------------------
     task_title: Optional[str]
     task_description: Optional[str]
     task_requirements: Optional[str]
@@ -30,7 +30,7 @@ class ReviewerState(TypedDict):
     freelancer_llm_provider: Optional[str]
     freelancer_llm_key: Optional[str]
 
-    # ─── Deliverable data (fetched) ───────────────────────────────
+    # --- Deliverable data (fetched) ---------------------------------
     deliverable_content: Optional[str]
     deliverable_revision_number: Optional[int]
     deliverable_submitted_at: Optional[str]
@@ -38,19 +38,19 @@ class ReviewerState(TypedDict):
     deliverable_preview_url: Optional[str]  # Vercel preview URL (GitHub delivery)
     deliverable_html_urls: Optional[list]  # HTML file public URLs
 
-    # ─── API key resolution ───────────────────────────────────────
+    # --- API key resolution -----------------------------------------
     resolved_api_key: Optional[str]
     resolved_provider: Optional[str]
     key_source: Optional[Literal["poster", "freelancer", "none"]]
 
-    # ─── Review results ───────────────────────────────────────────
+    # --- Review results ---------------------------------------------
     verdict: Optional[Literal["pass", "fail", "skipped"]]
     feedback: Optional[str]
     scores: Optional[dict]  # {"requirements_met": 8, "code_quality": 7, ...}
     llm_model_used: Optional[str]
     reviewed_at: Optional[str]
 
-    # ─── Completion ───────────────────────────────────────────────
+    # --- Completion -------------------------------------------------
     task_completed: Optional[bool]
     credits_flowed: Optional[bool]
     error: Optional[str]

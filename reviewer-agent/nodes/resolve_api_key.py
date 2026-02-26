@@ -42,11 +42,11 @@ def validate_key(api_key: str, provider: str) -> bool:
             return resp.status_code == 200
 
         else:
-            print(f"  ⚠️  Unknown provider '{provider}' — skipping validation")
+            print(f"  [!!] Unknown provider '{provider}' -- skipping validation")
             return False
 
     except requests.RequestException as e:
-        print(f"  ⚠️  Key validation failed: {e}")
+        print(f"  [!!] Key validation failed: {e}")
         return False
 
 
@@ -55,63 +55,59 @@ def resolve_api_key(state: ReviewerState) -> dict:
     Resolve which LLM key to use.
 
     Priority:
-      1. Poster key — if auto_review_enabled + key exists + under limit + key works
-      2. Freelancer key — if key exists + key works (self-review or poster limit hit)
-      3. None — skip automated review
+      1. Poster key -- if key exists + under limit + key works
+      2. Freelancer key -- if key exists + key works
+      3. None -- skip automated review
     """
     if state.get("error"):
         return {}
 
-    print("  🔑 Resolving LLM API key...")
+    print("  [KEY] Resolving LLM API key...")
 
-    # ─── 1. Try poster's key ────────────────────────────────────────
-    auto_review = state.get("auto_review_enabled", False)
+    # --- 1. Try poster's key (from user profile) --------------------
     poster_key = state.get("poster_llm_key")
     poster_provider = state.get("poster_llm_provider", "openrouter")
     poster_max = state.get("poster_max_reviews")
     poster_used = state.get("poster_reviews_used", 0)
 
-    if auto_review and poster_key:
-        # Check limit
+    if poster_key:
         under_limit = poster_max is None or poster_used < poster_max
         if under_limit:
-            print(f"  🔍 Validating poster's key ({poster_provider})...")
+            print(f"  [..] Validating poster's key ({poster_provider})...")
             if validate_key(poster_key, poster_provider):
-                print(f"  ✅ Using poster's key ({poster_provider})")
+                print(f"  [OK] Using poster's key ({poster_provider})")
                 if poster_max is not None:
-                    print(f"     Reviews: {poster_used + 1}/{poster_max}")
+                    print(f"       Reviews: {poster_used + 1}/{poster_max}")
                 return {
                     "resolved_api_key": poster_key,
                     "resolved_provider": poster_provider,
                     "key_source": "poster",
                 }
             else:
-                print(f"  ❌ Poster's key failed validation — trying freelancer")
+                print(f"  [!!] Poster's key failed validation -- trying freelancer")
         else:
-            print(f"  ⚠️  Poster's review limit reached ({poster_used}/{poster_max}) — trying freelancer")
-    elif auto_review and not poster_key:
-        print("  ⚠️  Auto-review enabled but poster has no key — trying freelancer")
-    elif not auto_review:
-        print("  ℹ️  Auto-review not enabled by poster — checking freelancer key")
+            print(f"  [!!] Poster's review limit reached ({poster_used}/{poster_max}) -- trying freelancer")
+    else:
+        print("  [--] Poster has no LLM key -- trying freelancer")
 
-    # ─── 2. Try freelancer's key ────────────────────────────────────
+    # --- 2. Try freelancer's key ------------------------------------
     freelancer_key = state.get("freelancer_llm_key")
     freelancer_provider = state.get("freelancer_llm_provider", "openrouter")
 
     if freelancer_key:
-        print(f"  🔍 Validating freelancer's key ({freelancer_provider})...")
+        print(f"  [..] Validating freelancer's key ({freelancer_provider})...")
         if validate_key(freelancer_key, freelancer_provider):
-            print(f"  ✅ Using freelancer's key ({freelancer_provider})")
+            print(f"  [OK] Using freelancer's key ({freelancer_provider})")
             return {
                 "resolved_api_key": freelancer_key,
                 "resolved_provider": freelancer_provider,
                 "key_source": "freelancer",
             }
         else:
-            print(f"  ❌ Freelancer's key failed validation")
+            print(f"  [!!] Freelancer's key failed validation")
 
-    # ─── 3. No key available ────────────────────────────────────────
-    print("  ⏭️  No working LLM key available — skipping automated review")
+    # --- 3. No key available ----------------------------------------
+    print("  [SKIP] No working LLM key available -- skipping automated review")
     return {
         "resolved_api_key": None,
         "resolved_provider": None,
