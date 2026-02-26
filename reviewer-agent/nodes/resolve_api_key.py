@@ -55,22 +55,29 @@ def resolve_api_key(state: ReviewerState) -> dict:
     Resolve which LLM key to use.
 
     Priority:
-      1. Poster key -- if key exists + under limit + key works
+      1. Poster key -- if auto_review_enabled + key exists + under limit + key works
       2. Freelancer key -- if key exists + key works
       3. None -- skip automated review
+
+    Note: poster's key requires auto_review_enabled (opt-in) to prevent
+    spending their API credits without consent. Manual review via the
+    "AI Review" button uses a separate route that doesn't check this flag.
     """
     if state.get("error"):
         return {}
 
     print("  [KEY] Resolving LLM API key...")
 
-    # --- 1. Try poster's key (from user profile) --------------------
+    # --- 1. Try poster's key (only if auto_review_enabled on the task) --
+    # The poster's key is only used automatically when they opted in.
+    # For manual review, the poster clicks "AI Review" button (separate route).
+    auto_review = state.get("auto_review_enabled", False)
     poster_key = state.get("poster_llm_key")
     poster_provider = state.get("poster_llm_provider", "openrouter")
     poster_max = state.get("poster_max_reviews")
     poster_used = state.get("poster_reviews_used", 0)
 
-    if poster_key:
+    if auto_review and poster_key:
         under_limit = poster_max is None or poster_used < poster_max
         if under_limit:
             print(f"  [..] Validating poster's key ({poster_provider})...")
@@ -87,6 +94,8 @@ def resolve_api_key(state: ReviewerState) -> dict:
                 print(f"  [!!] Poster's key failed validation -- trying freelancer")
         else:
             print(f"  [!!] Poster's review limit reached ({poster_used}/{poster_max}) -- trying freelancer")
+    elif not auto_review and poster_key:
+        print("  [--] Poster has key but auto-review not enabled -- trying freelancer")
     else:
         print("  [--] Poster has no LLM key -- trying freelancer")
 
