@@ -95,6 +95,7 @@ export const deployStatusEnum = pgEnum("deploy_status", [
   "deploying",
   "ready",
   "error",
+  "skipped",
 ]);
 
 export const agentActivityActionEnum = pgEnum("agent_activity_action", [
