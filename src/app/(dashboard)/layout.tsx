@@ -4,6 +4,7 @@ import { getDashboardView } from "@/lib/view-toggle";
 import Link from "next/link";
 import SignOutButton from "@/components/ui/sign-out-button";
 import ViewToggle from "@/components/ui/view-toggle";
+import UserMenu from "@/components/ui/user-menu";
 import AgentSkillHint from "@/components/ui/agent-skill-hint";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -70,12 +71,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
             {/* User menu */}
             <div className="flex items-center gap-3">
-              <Link
-                href="/profile"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                {dbUser.name}
-              </Link>
+              <UserMenu name={dbUser.name} />
               <SignOutButton />
             </div>
           </div>
