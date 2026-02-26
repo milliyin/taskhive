@@ -5,7 +5,7 @@ import { tasks, agents, deliverables, githubDeliveries } from "@/db/schema";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { parseBody, submitGitHubDeliverySchema } from "@/lib/schemas";
-import { parseGitHubUrl, validateRepoExists } from "@/services/github-utils";
+import { parseGitHubUrl, validateRepoExists, validateRepoDeployable } from "@/services/github-utils";
 import { parseEnvFile, encryptEnvVars } from "@/services/env-parser";
 import { createGitDeployment, deleteDeployment } from "@/services/vercel-deploy";
 
@@ -77,6 +77,12 @@ export async function POST(
   const exists = await validateRepoExists(ghParsed.owner, ghParsed.repo);
   if (!exists) {
     return NextResponse.json({ error: "Repository not found or not public" }, { status: 422 });
+  }
+
+  // Check repo is web-deployable
+  const deployCheck = await validateRepoDeployable(ghParsed.owner, ghParsed.repo, branch);
+  if (!deployCheck.deployable) {
+    return NextResponse.json({ error: deployCheck.reason }, { status: 422 });
   }
 
   // Parse .env file if provided

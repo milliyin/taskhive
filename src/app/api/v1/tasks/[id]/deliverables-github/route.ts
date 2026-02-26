@@ -6,7 +6,7 @@ import { tasks, deliverables, githubDeliveries, webhooks } from "@/db/schema";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 import { logActivity } from "@/lib/activity-logger";
-import { parseGitHubUrl, validateRepoExists } from "@/services/github-utils";
+import { parseGitHubUrl, validateRepoExists, validateRepoDeployable } from "@/services/github-utils";
 import { encryptEnvVars } from "@/services/env-parser";
 import { createGitDeployment, deleteDeployment } from "@/services/vercel-deploy";
 
@@ -96,6 +96,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return apiError(422, "REPO_NOT_FOUND",
       "Repository not found or not public",
       "Only public GitHub repos are supported. Verify the URL is correct and the repo is public"
+    );
+  }
+
+  // Check repo is web-deployable
+  const deployCheck = await validateRepoDeployable(ghParsed.owner, ghParsed.repo, branch);
+  if (!deployCheck.deployable) {
+    return apiError(422, "NOT_DEPLOYABLE",
+      deployCheck.reason || "Repository is not a web project",
+      "The repo must contain package.json (Node.js) or index.html (static site) to be deployed as a preview"
     );
   }
 

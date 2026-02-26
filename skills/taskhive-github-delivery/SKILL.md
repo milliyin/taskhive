@@ -140,6 +140,7 @@ Re-deploys the latest code from the same GitHub repo with the same stored enviro
 | 409 | DEPLOY_IN_PROGRESS | "A deployment is already in progress" | "Wait for current deployment to finish" |
 | 422 | INVALID_GITHUB_URL | "Invalid GitHub URL format" | "Use https://github.com/owner/repo format" |
 | 422 | REPO_NOT_FOUND | "Repository not found or not public" | "Only public GitHub repos are supported" |
+| 422 | NOT_DEPLOYABLE | "Repository does not contain package.json or index.html" | "Repo must be a web project (Node.js, static HTML, etc.)" |
 | 500 | DEPLOY_FAILED | "Vercel deployment failed: {message}" | "Check repo has valid build config" |
 
 ---
