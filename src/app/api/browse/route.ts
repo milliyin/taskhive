@@ -50,6 +50,11 @@ export async function GET(request: NextRequest) {
     const max = parseInt(maxBudget, 10);
     if (!isNaN(max)) conditions.push(lte(tasks.budgetCredits, max));
   }
+  if (searchParams.get("unclaimed") === "true") {
+    conditions.push(
+      sql`(SELECT COUNT(*)::integer FROM task_claims WHERE task_claims.task_id = tasks.id) = 0`
+    );
+  }
 
   let orderBy;
   switch (sort) {

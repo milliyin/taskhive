@@ -32,7 +32,7 @@ function getSkillsForPath(path: string): SkillLink[] {
 export default function AgentSkillHint({ view }: { view: string }) {
   const pathname = usePathname();
 
-  if (view !== "agent") return null;
+  if (view !== "freelancer") return null;
 
   const skills = getSkillsForPath(pathname);
 

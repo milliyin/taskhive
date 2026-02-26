@@ -34,6 +34,7 @@ export default function BrowseTasksPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState("newest");
   const [minBudget, setMinBudget] = useState("");
+  const [unclaimedOnly, setUnclaimedOnly] = useState(false);
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
@@ -50,6 +51,7 @@ export default function BrowseTasksPage() {
     if (categoryFilter) params.set("category", categoryFilter);
     if (sort) params.set("sort", sort);
     if (minBudget) params.set("min_budget", minBudget);
+    if (unclaimedOnly) params.set("unclaimed", "true");
     params.set("limit", String(limit));
     params.set("offset", String(offset));
 
@@ -63,7 +65,7 @@ export default function BrowseTasksPage() {
       // ignore
     }
     setLoading(false);
-  }, [debouncedSearch, categoryFilter, sort, minBudget, offset]);
+  }, [debouncedSearch, categoryFilter, sort, minBudget, unclaimedOnly, offset]);
 
   useEffect(() => {
     fetchTasks();
@@ -72,7 +74,7 @@ export default function BrowseTasksPage() {
   // Reset offset when filters change
   useEffect(() => {
     setOffset(0);
-  }, [debouncedSearch, categoryFilter, sort, minBudget]);
+  }, [debouncedSearch, categoryFilter, sort, minBudget, unclaimedOnly]);
 
   return (
     <div>
@@ -121,6 +123,16 @@ export default function BrowseTasksPage() {
           className="w-28 rounded border border-gray-300 px-3 py-1.5 text-sm"
         />
 
+        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={unclaimedOnly}
+            onChange={(e) => setUnclaimedOnly(e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          Unclaimed only
+        </label>
+
         <span className="text-xs text-gray-400">
           {total} open task{total !== 1 ? "s" : ""}
         </span>
@@ -154,7 +166,17 @@ export default function BrowseTasksPage() {
                       </span>
                     )}
                     <span>by {task.poster.name}</span>
-                    <span>{task.claimsCount} claim{task.claimsCount !== 1 ? "s" : ""}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 font-medium ${
+                        task.claimsCount === 0
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {task.claimsCount === 0
+                        ? "No bids yet"
+                        : `${task.claimsCount} bid${task.claimsCount !== 1 ? "s" : ""}`}
+                    </span>
                     {task.deadline && (
                       <span>due {new Date(task.deadline).toLocaleDateString()}</span>
                     )}

@@ -1,8 +1,10 @@
 import { getUser } from "@/lib/auth";
+import { getDashboardView } from "@/lib/view-toggle";
 import db from "@/db/index";
 import { tasks, categories, agents, taskClaims, deliverables, deliverableFiles, taskAttachments, reviews } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import StatusBadge from "@/components/ui/status-badge";
 import ClaimActions from "@/components/tasks/claim-actions";
 import DeliverableActions from "@/components/tasks/deliverable-actions";
@@ -14,6 +16,7 @@ import FileUpload from "@/components/tasks/file-upload";
 import TaskComments from "@/components/tasks/task-comments";
 import SubmitWorkForm from "@/components/tasks/submit-work-form";
 import CollapsiblePreview from "@/components/tasks/collapsible-preview";
+import BidForm from "@/components/tasks/bid-form";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -43,6 +46,31 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   const isPoster = task.task.posterId === dbUser.id;
   const isWorker = !isPoster && !!task.agentOperatorId && task.agentOperatorId === dbUser.id;
+  const currentView = await getDashboardView();
+
+  // Check if freelancer can bid
+  let userAgent: { id: number; status: string } | null = null;
+  let existingClaim: { id: number; proposedCredits: number } | null = null;
+  if (currentView === "freelancer" && !isPoster && task.task.status === "open") {
+    userAgent = await db
+      .select({ id: agents.id, status: agents.status })
+      .from(agents)
+      .where(and(eq(agents.operatorId, dbUser.id), eq(agents.status, "active")))
+      .then((r) => r[0] || null);
+
+    if (userAgent) {
+      existingClaim = await db
+        .select({ id: taskClaims.id, proposedCredits: taskClaims.proposedCredits })
+        .from(taskClaims)
+        .where(and(
+          eq(taskClaims.taskId, task.task.id),
+          eq(taskClaims.agentId, userAgent.id),
+          eq(taskClaims.status, "pending")
+        ))
+        .then((r) => r[0] || null);
+    }
+  }
+  const canBid = currentView === "freelancer" && !isPoster && task.task.status === "open" && !!userAgent && !existingClaim;
 
   // Fetch claims
   const claims = await db
@@ -176,6 +204,28 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           <p className="text-sm text-gray-500">No reference files attached.</p>
         )}
       </div>
+
+      {/* Bid form for freelancers */}
+      {currentView === "freelancer" && !isPoster && t.status === "open" && (
+        <>
+          {!userAgent ? (
+            <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <p className="text-sm text-yellow-800">
+                You need an active agent to bid on tasks.{" "}
+                <Link href="/my-agent" className="font-medium underline">Claim an agent</Link> first.
+              </p>
+            </div>
+          ) : existingClaim ? (
+            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <p className="text-sm text-blue-800">
+                You already have a pending bid on this task ({existingClaim.proposedCredits} credits).
+              </p>
+            </div>
+          ) : (
+            <BidForm taskId={t.id} maxBudget={t.budgetCredits} />
+          )}
+        </>
+      )}
 
       {/* Assigned agent */}
       {task.agentName && (

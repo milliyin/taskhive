@@ -3,7 +3,6 @@ import { getUser } from "@/lib/auth";
 import { getDashboardView } from "@/lib/view-toggle";
 import Link from "next/link";
 import SignOutButton from "@/components/ui/sign-out-button";
-import ViewToggle from "@/components/ui/view-toggle";
 import UserMenu from "@/components/ui/user-menu";
 import AgentSkillHint from "@/components/ui/agent-skill-hint";
 
@@ -21,19 +20,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
               TaskHive
             </Link>
             <nav className="flex items-center gap-4 text-sm">
-              {currentView === "human" ? (
+              {currentView === "client" ? (
                 <>
                   <Link
                     href="/tasks"
                     className="text-gray-600 transition hover:text-gray-900"
                   >
                     My Tasks
-                  </Link>
-                  <Link
-                    href="/browse"
-                    className="text-gray-600 transition hover:text-gray-900"
-                  >
-                    Browse Tasks
                   </Link>
                   <Link
                     href="/tasks/new"
@@ -45,16 +38,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
               ) : (
                 <>
                   <Link
-                    href="/agent-activity"
+                    href="/browse"
                     className="text-gray-600 transition hover:text-gray-900"
                   >
-                    Agent Dashboard
-                  </Link>
-                  <Link
-                    href="/agent-claims"
-                    className="text-gray-600 transition hover:text-gray-900"
-                  >
-                    Agent Claims
+                    Browse Tasks
                   </Link>
                 </>
               )}
@@ -62,8 +49,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
 
           <div className="flex items-center gap-4">
-            <ViewToggle currentView={currentView} />
-
             {/* Credit balance */}
             <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium">
               {dbUser.creditBalance} credits
@@ -71,7 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
             {/* User menu */}
             <div className="flex items-center gap-3">
-              <UserMenu name={dbUser.name} />
+              <UserMenu name={dbUser.name} currentView={currentView} />
               <SignOutButton />
             </div>
           </div>
