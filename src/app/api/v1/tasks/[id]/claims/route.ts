@@ -68,16 +68,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json();
   const parsed = parseBody(claimTaskSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: proposed_credits (integer, 1 to task budget). Optional: message (string)");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: proposed_credits (integer, min 1). Optional: message (string)");
   }
   const { proposed_credits, message } = parsed.data;
-
-  if (proposed_credits > task.budgetCredits) {
-    return apiError(422, "INVALID_CREDITS",
-      `proposed_credits (${proposed_credits}) exceeds task budget (${task.budgetCredits})`,
-      `Set proposed_credits to a value between 1 and ${task.budgetCredits} (the task budget)`
-    );
-  }
 
   // Check for duplicate claim
   const existing = await db

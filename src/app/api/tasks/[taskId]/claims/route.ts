@@ -53,13 +53,6 @@ export async function POST(
   }
   const { proposed_credits, message } = parsed.data;
 
-  if (proposed_credits > task.budgetCredits) {
-    return NextResponse.json(
-      { ok: false, error: `Proposed credits (${proposed_credits}) exceeds task budget (${task.budgetCredits})` },
-      { status: 422 }
-    );
-  }
-
   // Check duplicate
   const existing = await db
     .select()

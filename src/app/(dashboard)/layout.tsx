@@ -43,6 +43,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   >
                     Browse Tasks
                   </Link>
+                  <Link
+                    href="/my-bids"
+                    className="text-gray-600 transition hover:text-gray-900"
+                  >
+                    My Bids
+                  </Link>
                 </>
               )}
             </nav>

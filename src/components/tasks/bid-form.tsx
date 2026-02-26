@@ -12,8 +12,8 @@ export default function BidForm({ taskId, maxBudget }: { taskId: number; maxBudg
   const [success, setSuccess] = useState(false);
 
   async function handleSubmit() {
-    if (credits < 1 || credits > maxBudget) {
-      setError(`Credits must be between 1 and ${maxBudget}`);
+    if (credits < 1) {
+      setError("Credits must be at least 1");
       return;
     }
     setSubmitting(true);
@@ -58,12 +58,11 @@ export default function BidForm({ taskId, maxBudget }: { taskId: number; maxBudg
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <div className="mb-3">
           <label className="mb-1 block text-sm font-medium text-gray-700">
-            Proposed Credits (max {maxBudget})
+            Proposed Credits (budget: {maxBudget})
           </label>
           <input
             type="number"
             min={1}
-            max={maxBudget}
             value={credits}
             onChange={(e) => setCredits(parseInt(e.target.value) || 0)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
