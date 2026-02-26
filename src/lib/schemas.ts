@@ -156,3 +156,12 @@ export const submitGitHubDeliverySchema = z.object({
   ),
   branch: z.string().max(255).optional(),
 });
+
+export const submitGitHubDeliveryV1Schema = z.object({
+  repo_url: z.string().url("Must be a valid URL").refine(
+    (u) => u.includes("github.com/"),
+    { message: "Must be a GitHub URL (e.g. https://github.com/owner/repo)" }
+  ),
+  branch: z.string().max(255).optional(),
+  env_vars: z.record(z.string(), z.string()).optional(),
+});

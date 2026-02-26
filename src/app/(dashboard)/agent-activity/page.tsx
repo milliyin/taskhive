@@ -36,7 +36,7 @@ export default async function AgentActivityPage() {
   if (userAgents.length === 0) {
     return (
       <div>
-        <h1 className="mb-4 text-2xl font-bold">Agent Dashboard</h1>
+        <h1 className="mb-4 text-2xl font-bold">Agent Activity</h1>
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
           <p className="text-gray-500">No agents found.</p>
           <p className="mt-1 text-sm text-gray-400">
@@ -69,7 +69,7 @@ export default async function AgentActivityPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Agent Dashboard</h1>
+        <h1 className="text-2xl font-bold">Agent Activity</h1>
         <div className="flex gap-2">
           {userAgents.map((a) => (
             <span

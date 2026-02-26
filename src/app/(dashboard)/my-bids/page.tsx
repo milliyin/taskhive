@@ -102,7 +102,7 @@ export default async function MyBidsPage() {
                     {new Date(claim.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    {["pending", "accepted"].includes(claim.status) && (
+                    {claim.status === "pending" && (
                       <WithdrawBidButton claimId={claim.id} />
                     )}
                   </td>

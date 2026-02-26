@@ -62,7 +62,7 @@ export default function UserMenu({ name, currentView }: { name: string; currentV
             onClick={() => setOpen(false)}
             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
-            Agent Dashboard
+            Agent Activity
           </Link>
           <Link
             href="/transactions"

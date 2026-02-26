@@ -29,8 +29,8 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Can only withdraw pending or accepted claims
-  if (!["pending", "accepted"].includes(claim.status)) {
+  // Can only withdraw pending claims
+  if (claim.status !== "pending") {
     return NextResponse.json(
       { error: `Cannot withdraw claim in '${claim.status}' status` },
       { status: 409 }
@@ -42,17 +42,6 @@ export async function POST(
     .update(taskClaims)
     .set({ status: "withdrawn" })
     .where(eq(taskClaims.id, cId));
-
-  // If this was an accepted claim, revert task to open
-  if (claim.status === "accepted") {
-    const task = await db.select().from(tasks).where(eq(tasks.id, claim.taskId)).then((r) => r[0]);
-    if (task && task.status === "claimed") {
-      await db
-        .update(tasks)
-        .set({ status: "open", claimedByAgentId: null, updatedAt: new Date() })
-        .where(eq(tasks.id, claim.taskId));
-    }
-  }
 
   return NextResponse.json({ ok: true, status: "withdrawn" });
 }

@@ -41,11 +41,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  // Can only withdraw pending or accepted claims
-  if (!["pending", "accepted"].includes(claim.status)) {
+  // Can only withdraw pending claims
+  if (claim.status !== "pending") {
     return apiError(409, "INVALID_STATUS",
       `Cannot withdraw claim in '${claim.status}' status`,
-      "Only pending or accepted claims can be withdrawn. Rejected and withdrawn claims are final"
+      "Only pending claims can be withdrawn. Accepted, rejected and withdrawn claims are final"
     );
   }
 
@@ -55,14 +55,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .set({ status: "withdrawn" })
     .where(eq(taskClaims.id, cId));
 
-  // If this was an accepted claim, revert task to open
-  if (claim.status === "accepted" && task.status === "claimed") {
-    await db
-      .update(tasks)
-      .set({ status: "open", claimedByAgentId: null, updatedAt: new Date() })
-      .where(eq(tasks.id, taskId));
-  }
-
   logActivity(agent.id, "claim_withdrawn", `Withdrew claim #${cId} on task #${taskId}`, { taskId, claimId: cId });
 
   return withRateHeaders(
@@ -70,7 +62,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       claim_id: cId,
       task_id: taskId,
       status: "withdrawn",
-      task_reverted: claim.status === "accepted",
     }),
     rateHeaders
   );

@@ -17,6 +17,7 @@ function getSkillsForPath(path: string): SkillLink[] {
     return [
       { label: "Claim Task", url: `${BASE}/taskhive-claim-task/SKILL.md` },
       { label: "Submit Deliverable", url: `${BASE}/taskhive-submit-deliverable/SKILL.md` },
+      { label: "GitHub Delivery", url: `${BASE}/taskhive-github-delivery/SKILL.md` },
       { label: "Task Comments", url: `${BASE}/taskhive-task-comments/SKILL.md` },
     ];
   }
@@ -37,21 +38,7 @@ export default function AgentSkillHint({ view }: { view: string }) {
   const skills = getSkillsForPath(pathname);
 
   if (skills.length === 0) {
-    return (
-      <div className="border-t border-gray-100 bg-gray-50 px-4 py-2">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 text-xs text-gray-400">
-          <span>API:</span>
-          <a
-            href="https://taskhive-six.vercel.app/skill.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-600 hover:underline"
-          >
-            Onboarding Guide
-          </a>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
