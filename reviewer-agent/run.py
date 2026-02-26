@@ -112,13 +112,42 @@ def run_review(task_id: int, deliverable_id: int, taskhive_url: str, taskhive_ap
     return result
 
 
+def _collect_submitted_ids(taskhive_url: str, headers: dict) -> set:
+    """Scan all delivered tasks and return the set of submitted deliverable IDs."""
+    ids = set()
+    try:
+        resp = requests.get(
+            f"{taskhive_url}/api/v1/tasks?status=delivered&limit=50",
+            headers=headers, timeout=15,
+        )
+        if resp.status_code == 200:
+            for task in resp.json().get("data", []):
+                task_id = task.get("id")
+                if not task_id:
+                    continue
+                del_resp = requests.get(
+                    f"{taskhive_url}/api/v1/tasks/{task_id}/deliverables",
+                    headers=headers, timeout=15,
+                )
+                if del_resp.status_code == 200:
+                    for d in del_resp.json().get("data", []):
+                        if d.get("status") == "submitted":
+                            ids.add(d["id"])
+    except Exception:
+        pass
+    return ids
+
+
 def poll_for_deliverables(taskhive_url: str, taskhive_api_key: str, interval: int = 30):
     """Poll TaskHive for new submitted deliverables and review them."""
-    print("  [POLL] Polling mode -- checking for new deliverables every", interval, "seconds")
-    print("         Press Ctrl+C to stop\n")
-
-    reviewed = set()
     headers = {"Authorization": f"Bearer {taskhive_api_key}"}
+
+    # Initial scan -- remember existing deliverables so we only review NEW ones
+    print("  [POLL] Scanning existing deliverables...")
+    reviewed = _collect_submitted_ids(taskhive_url, headers)
+    print(f"  [POLL] Found {len(reviewed)} existing submitted deliverable(s) -- skipping these")
+    print(f"  [POLL] Watching for new deliverables every {interval} seconds")
+    print("         Press Ctrl+C to stop\n")
 
     while True:
         try:
