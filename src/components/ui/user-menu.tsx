@@ -23,7 +23,8 @@ export default function UserMenu({ name, currentView }: { name: string; currentV
     const newView = currentView === "client" ? "freelancer" : "client";
     document.cookie = `dashboard_view=${newView};path=/;max-age=${60 * 60 * 24 * 365}`;
     setOpen(false);
-    router.push(newView === "client" ? "/tasks" : "/browse");
+    // Hard navigation to force server layout re-render with the new cookie
+    window.location.href = newView === "client" ? "/tasks" : "/browse";
   }
 
   return (

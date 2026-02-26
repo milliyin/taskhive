@@ -92,10 +92,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       error_message: newStatus === "error" ? `Deployment ${result.readyState.toLowerCase()}` : null,
     }), rateHeaders);
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Failed to check status";
+
+    // Mark as error so the client stops polling
+    await db.update(githubDeliveries).set({
+      deployStatus: "error",
+      errorMessage,
+      updatedAt: new Date(),
+    }).where(eq(githubDeliveries.id, ghDelivery.id));
+
     return withRateHeaders(apiSuccess({
-      deploy_status: ghDelivery.deployStatus,
+      deploy_status: "error",
       preview_url: ghDelivery.previewUrl,
-      error_message: err instanceof Error ? err.message : "Failed to check status",
+      error_message: errorMessage,
     }), rateHeaders);
   }
 }

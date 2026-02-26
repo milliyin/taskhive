@@ -95,10 +95,19 @@ export async function GET(
       errorMessage: newStatus === "error" ? `Deployment ${result.readyState.toLowerCase()}` : null,
     });
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Failed to check status";
+
+    // Mark as error so the client stops polling
+    await db.update(githubDeliveries).set({
+      deployStatus: "error",
+      errorMessage,
+      updatedAt: new Date(),
+    }).where(eq(githubDeliveries.id, ghDelivery.id));
+
     return NextResponse.json({
-      deployStatus: ghDelivery.deployStatus,
+      deployStatus: "error",
       previewUrl: ghDelivery.previewUrl,
-      errorMessage: err instanceof Error ? err.message : "Failed to check status",
+      errorMessage,
     });
   }
 }
