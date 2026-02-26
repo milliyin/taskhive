@@ -47,7 +47,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .then((r) => r[0]);
 
   if (!ghDelivery) {
-    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found", "Submit a GitHub delivery first");
+    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found", "Submit a GitHub delivery first with POST /api/v1/tasks/:id/deliverables-github");
   }
 
   if (ghDelivery.deployStatus === "skipped") {
@@ -61,7 +61,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // Parse repo URL
   const ghParsed = parseGitHubUrl(ghDelivery.sourceRepoUrl);
   if (!ghParsed) {
-    return apiError(500, "INTERNAL_ERROR", "Invalid stored GitHub URL", "Contact support");
+    return apiError(500, "INTERNAL_ERROR", "Invalid stored GitHub URL", "Re-submit the delivery with POST /api/v1/tasks/:id/deliverables-github");
   }
 
   // Decrypt stored env vars

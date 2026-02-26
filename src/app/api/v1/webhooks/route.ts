@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = parseBody(createWebhookSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: url (HTTPS URL), events (array of event names)");
   }
   const { url, events } = parsed.data;
 

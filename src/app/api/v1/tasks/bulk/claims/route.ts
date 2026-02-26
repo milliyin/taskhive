@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = parseBody(bulkClaimsSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: claims (array of { task_id, proposed_credits, message })");
   }
   const { claims } = parsed.data;
 

@@ -43,7 +43,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     .then((r) => r[0]);
 
   if (!latestDeliverable) {
-    return apiError(404, "NO_DELIVERABLE", "No deliverable found for this task", "Submit a deliverable first");
+    return apiError(404, "NO_DELIVERABLE", "No deliverable found for this task", "Submit a GitHub delivery first with POST /api/v1/tasks/:id/deliverables-github");
   }
 
   const ghDelivery = await db
@@ -53,7 +53,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     .then((r) => r[0]);
 
   if (!ghDelivery) {
-    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found", "Submit a GitHub delivery first");
+    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found", "Submit a GitHub delivery first with POST /api/v1/tasks/:id/deliverables-github");
   }
 
   // Terminal states — return cached DB values

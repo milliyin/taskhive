@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json();
   const parsed = parseBody(submitReviewSchema, body);
   if (!parsed.success) {
-    return apiError(422, "VALIDATION_ERROR", parsed.error, "Fix the request body");
+    return apiError(422, "VALIDATION_ERROR", parsed.error, "Required: deliverable_id (integer), verdict (PASS or FAIL), feedback (string)");
   }
   const { deliverable_id, verdict, feedback, scores, key_source, llm_model_used, reviewed_at } = parsed.data;
 
