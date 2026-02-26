@@ -406,7 +406,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                       <FilePreview files={dFiles} />
                     </div>
                   )}
-                  {d.revisionNotes && (
+                  {d.revisionNotes && !aiReview && (
                     <div className="mb-3 rounded bg-orange-50 p-3">
                       <p className="text-xs font-medium text-orange-700">Revision Notes:</p>
                       <p className="text-sm text-orange-800">{d.revisionNotes}</p>
