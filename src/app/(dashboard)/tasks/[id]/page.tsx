@@ -1,7 +1,7 @@
 import { getUser } from "@/lib/auth";
 import { getDashboardView } from "@/lib/view-toggle";
 import db from "@/db/index";
-import { tasks, categories, agents, taskClaims, deliverables, deliverableFiles, taskAttachments, reviews, githubDeliveries } from "@/db/schema";
+import { tasks, categories, agents, taskClaims, deliverables, deliverableFiles, deliverableReviews, taskAttachments, reviews, githubDeliveries } from "@/db/schema";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -121,6 +121,19 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   const ghByDeliverable = new Map<number, (typeof allGithubDeliveries)[number]>();
   for (const gh of allGithubDeliveries) {
     ghByDeliverable.set(gh.deliverableId, gh);
+  }
+
+  // Fetch AI reviews
+  const allAiReviews = deliverableIds.length > 0
+    ? await db.select().from(deliverableReviews).where(inArray(deliverableReviews.deliverableId, deliverableIds))
+    : [];
+  const aiReviewByDeliverable = new Map<number, (typeof allAiReviews)[number]>();
+  for (const r of allAiReviews) {
+    // Keep the latest review per deliverable
+    const existing = aiReviewByDeliverable.get(r.deliverableId);
+    if (!existing || (r.reviewedAt && existing.reviewedAt && r.reviewedAt > existing.reviewedAt)) {
+      aiReviewByDeliverable.set(r.deliverableId, r);
+    }
   }
 
   // Fetch task attachments
@@ -344,6 +357,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               const hasWebFiles = dFiles.some((f) => f.file_type === "html");
               const isLatest = idx === 0;
               const ghDelivery = ghByDeliverable.get(d.id);
+              const aiReview = aiReviewByDeliverable.get(d.id);
 
               return (
                 <div
@@ -396,6 +410,32 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                     <div className="mb-3 rounded bg-orange-50 p-3">
                       <p className="text-xs font-medium text-orange-700">Revision Notes:</p>
                       <p className="text-sm text-orange-800">{d.revisionNotes}</p>
+                    </div>
+                  )}
+                  {aiReview && (
+                    <div className={`mb-3 rounded p-3 ${aiReview.reviewResult === "pass" ? "bg-green-50" : "bg-orange-50"}`}>
+                      <div className="mb-1 flex items-center justify-between">
+                        <p className={`text-xs font-medium ${aiReview.reviewResult === "pass" ? "text-green-700" : "text-orange-700"}`}>
+                          AI Review: {aiReview.reviewResult?.toUpperCase()}
+                        </p>
+                        {aiReview.llmModelUsed && (
+                          <span className="text-[10px] text-gray-400">{aiReview.llmModelUsed}</span>
+                        )}
+                      </div>
+                      {aiReview.reviewFeedback && (
+                        <p className={`text-sm ${aiReview.reviewResult === "pass" ? "text-green-800" : "text-orange-800"}`}>
+                          {aiReview.reviewFeedback}
+                        </p>
+                      )}
+                      {aiReview.reviewScores != null && typeof aiReview.reviewScores === "object" ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {Object.keys(aiReview.reviewScores as object).map((key) => (
+                            <span key={key} className="rounded bg-white/60 px-1.5 py-0.5 text-[10px] text-gray-600">
+                              {key.replace(/_/g, " ")}: {String((aiReview.reviewScores as Record<string, unknown>)[key])}/10
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   )}
                   {isPoster && d.status === "submitted" && t.status === "delivered" && (
