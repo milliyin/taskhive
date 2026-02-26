@@ -58,7 +58,7 @@ read_task → fetch_deliverable → resolve_api_key → analyze_content → brow
 | Node | Purpose |
 |------|---------|
 | `read_task` | Fetches task details + review config (decrypted LLM keys) from TaskHive API |
-| `fetch_deliverable` | Fetches deliverable content to review |
+| `fetch_deliverable` | Fetches deliverable content, files, and deploy status |
 | `resolve_api_key` | Priority: poster key (under limit) → freelancer key → env fallback → none |
 | `analyze_content` | Sends task + deliverable to LLM for strict evaluation |
 | `browse_url` | Extracts URLs from content, uses Browserbase for visual verification |
@@ -111,10 +111,12 @@ The agent reads the `.env` file from the project root automatically.
 The LLM API key can come from two sources:
 
 ### Poster's Key
-- Set when creating a task via the "Enable AI Review" toggle
-- Stored encrypted on the task (`poster_llm_key_encrypted`)
-- Poster sets a `max_reviews` limit to cap their cost
-- After the limit is hit, the poster's key is no longer used
+- Set on the poster's **profile page** ("AI Review Settings" section)
+- Stored encrypted on the user account (`llm_key_encrypted`)
+- Used across all tasks — no need to enter per-task
+- Poster enables auto-review per task with the "Enable AI Auto-Review" toggle
+- Optional `max_reviews` limit per task to cap cost
+- After the limit is hit, the poster's key is no longer used for that task
 
 ### Freelancer's Key
 - Set in the agent settings page ("LLM Settings" section)
@@ -193,7 +195,7 @@ The LLM returns structured JSON:
 
 If the deliverable contains URLs and `BROWSERBASE_API_KEY` is set, the agent:
 
-1. Extracts URLs from deliverable content
+1. Checks for Vercel preview URL (from GitHub delivery), then HTML file URLs, then URLs from text content
 2. Creates a Browserbase session
 3. Navigates to the URL
 4. Takes a screenshot
@@ -206,12 +208,22 @@ This is optional — the agent works without Browserbase.
 
 ## Platform Integration
 
+### Profile Settings (Poster)
+
+On their **profile page**, the poster configures AI review once:
+- Select LLM provider (OpenRouter / Anthropic / OpenAI)
+- Enter their API key (encrypted at rest with AES-256-GCM, never in API responses)
+- Key is used across all their tasks
+
 ### Task Creation (Poster)
 
-When creating a task via the web UI, the poster can toggle "Enable AI Review":
-- Select LLM provider (OpenRouter / Anthropic / OpenAI)
-- Enter their API key (encrypted at rest, never in API responses)
-- Set max reviews (caps how many AI reviews they pay for)
+When creating a task, the poster can:
+- Toggle "Enable AI Auto-Review" (requires LLM key on profile)
+- Set optional `max_reviews` per task to cap cost
+
+### Inline AI Review (Poster)
+
+After delivery, the poster can click the **"AI Review"** button on the task detail page to trigger an inline LLM review. This works independently of the auto-review toggle — the poster explicitly triggers it.
 
 ### Agent Settings (Freelancer)
 
@@ -231,11 +243,11 @@ When a deliverable is submitted, a `deliverable.submitted` webhook fires. The re
 
 ```
 reviewer-agent/
-├── run.py                  # Entry point (single review + poll mode)
+├── run.py                  # Entry point (single review + poll + webhook modes)
 ├── graph.py                # LangGraph graph definition
 ├── state.py                # TypedDict state
+├── webhook_server.py       # Flask webhook listener
 ├── requirements.txt        # Python dependencies
-├── README.md               # Agent-specific docs
 └── nodes/
     ├── read_task.py        # Fetch task + review config
     ├── fetch_deliverable.py # Fetch deliverable content

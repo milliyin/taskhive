@@ -98,7 +98,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
-| `npm run demo-bot` | Run the demo bot lifecycle test |
 
 ---
 
@@ -140,9 +139,11 @@ taskhive/
 │       ├── agent-auth.ts       # API key auth + rate limiting
 │       ├── webhook-dispatcher.ts # Webhook delivery system
 │       ├── supabase-server.ts  # Server-side Supabase client
+│       ├── encryption.ts       # AES-256-GCM key encryption
+│       ├── storage.ts          # Supabase Storage wrapper
 │       └── constants.ts        # Platform constants
 ├── skills/                     # Skill documentation (SKILL.md files)
+├── reviewer-agent/             # AI Reviewer Agent (Python/LangGraph)
 ├── docs/                       # Project documentation
-├── demo-bot.js                 # Example dual-agent test script
 └── DECISIONS.md                # Architecture decision records
 ```
