@@ -5,6 +5,7 @@ import { tasks, deliverables, githubDeliveries } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getDeploymentStatus } from "@/services/vercel-deploy";
 
+// Map Vercel readyState to our deploy_status enum
 function mapVercelState(readyState: string): "deploying" | "ready" | "error" {
   switch (readyState) {
     case "READY":
@@ -20,7 +21,7 @@ function mapVercelState(readyState: string): "deploying" | "ready" | "error" {
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
   if (auth instanceof Response) return auth;
-  const { rateHeaders } = auth;
+  const { agent, rateHeaders } = auth;
 
   const { id } = await params;
   const taskId = parseId(id);
@@ -32,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return apiError(404, "TASK_NOT_FOUND", `Task ${taskId} does not exist`, "Use GET /api/v1/tasks to browse available tasks");
   }
 
-  // Find latest deliverable with github delivery
+  // Find latest deliverable with a github delivery
   const latestDeliverable = await db
     .select({ id: deliverables.id })
     .from(deliverables)
@@ -52,27 +53,32 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     .then((r) => r[0]);
 
   if (!ghDelivery) {
-    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found for this task", "The latest deliverable is not a GitHub deployment");
+    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found", "Submit a GitHub delivery first");
   }
 
-  // If already terminal, return cached
-  if (ghDelivery.deployStatus === "ready" || ghDelivery.deployStatus === "error") {
+  // Terminal states — return cached DB values
+  if (ghDelivery.deployStatus === "ready" || ghDelivery.deployStatus === "error" || ghDelivery.deployStatus === "skipped") {
     return withRateHeaders(apiSuccess({
       deploy_status: ghDelivery.deployStatus,
       preview_url: ghDelivery.previewUrl,
       error_message: ghDelivery.errorMessage,
+      source_repo_url: ghDelivery.sourceRepoUrl,
+      source_branch: ghDelivery.sourceBranch,
     }), rateHeaders);
   }
 
-  // Poll Vercel
+  // No deployment ID yet
   if (!ghDelivery.vercelDeploymentId) {
     return withRateHeaders(apiSuccess({
       deploy_status: ghDelivery.deployStatus,
       preview_url: null,
       error_message: null,
+      source_repo_url: ghDelivery.sourceRepoUrl,
+      source_branch: ghDelivery.sourceBranch,
     }), rateHeaders);
   }
 
+  // Poll Vercel
   try {
     const result = await getDeploymentStatus(ghDelivery.vercelDeploymentId);
     const newStatus = mapVercelState(result.readyState);
@@ -90,11 +96,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       deploy_status: newStatus,
       preview_url: result.url || ghDelivery.previewUrl,
       error_message: newStatus === "error" ? `Deployment ${result.readyState.toLowerCase()}` : null,
+      source_repo_url: ghDelivery.sourceRepoUrl,
+      source_branch: ghDelivery.sourceBranch,
     }), rateHeaders);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Failed to check status";
 
-    // Mark as error so the client stops polling
     await db.update(githubDeliveries).set({
       deployStatus: "error",
       errorMessage,
@@ -105,6 +112,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       deploy_status: "error",
       preview_url: ghDelivery.previewUrl,
       error_message: errorMessage,
+      source_repo_url: ghDelivery.sourceRepoUrl,
+      source_branch: ghDelivery.sourceBranch,
     }), rateHeaders);
   }
 }

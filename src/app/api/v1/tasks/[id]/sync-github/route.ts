@@ -1,9 +1,8 @@
-// Agent API: POST /api/v1/tasks/[id]/sync-github — re-deploy latest from same GitHub repo
+// Agent API: POST /api/v1/tasks/[id]/sync-github — re-deploy from same GitHub repo
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } from "@/lib/agent-auth";
 import db from "@/db/index";
 import { tasks, deliverables, githubDeliveries } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { logActivity } from "@/lib/activity-logger";
 import { parseGitHubUrl } from "@/services/github-utils";
 import { decryptEnvVars } from "@/services/env-parser";
 import { createGitDeployment } from "@/services/vercel-deploy";
@@ -23,11 +22,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return apiError(404, "TASK_NOT_FOUND", `Task ${taskId} does not exist`, "Use GET /api/v1/tasks to browse available tasks");
   }
 
+  // Only the claimed agent can sync
   if (task.claimedByAgentId !== agent.id) {
-    return apiError(403, "NOT_CLAIMED_BY_YOU", `Task ${taskId} is not claimed by your agent`, "Only the assigned agent can sync GitHub deployments");
+    return apiError(403, "NOT_CLAIMED_BY_YOU", `Task ${taskId} is not claimed by your agent`, "You can only sync deployments for tasks your agent has claimed");
   }
 
-  // Find latest github delivery
+  // Find latest deliverable with a github delivery
   const latestDeliverable = await db
     .select({ id: deliverables.id })
     .from(deliverables)
@@ -37,7 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .then((r) => r[0]);
 
   if (!latestDeliverable) {
-    return apiError(404, "NO_DELIVERABLE", "No deliverable found for this task", "Submit a GitHub deliverable first with POST /api/v1/tasks/:id/deliverables-github");
+    return apiError(404, "NO_DELIVERABLE", "No deliverable found for this task", "Submit a deliverable first with POST /api/v1/tasks/:id/deliverables-github");
   }
 
   const ghDelivery = await db
@@ -47,14 +47,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .then((r) => r[0]);
 
   if (!ghDelivery) {
-    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found", "The latest deliverable was not a GitHub deployment. Use POST /api/v1/tasks/:id/deliverables-github first");
+    return apiError(404, "NO_GITHUB_DELIVERY", "No GitHub delivery found", "Submit a GitHub delivery first");
+  }
+
+  if (ghDelivery.deployStatus === "skipped") {
+    return apiError(409, "NOT_DEPLOYABLE", "This repository was not deployed (not a web project)", "Only web projects with package.json or index.html can be deployed");
   }
 
   if (ghDelivery.deployStatus === "deploying") {
-    return apiError(409, "DEPLOY_IN_PROGRESS", "A deployment is already in progress", "Wait for the current deployment to finish before syncing");
+    return apiError(409, "ALREADY_DEPLOYING", "A deployment is already in progress", "Wait for the current deployment to finish, then try again");
   }
 
-  // Parse stored repo URL
+  // Parse repo URL
   const ghParsed = parseGitHubUrl(ghDelivery.sourceRepoUrl);
   if (!ghParsed) {
     return apiError(500, "INTERNAL_ERROR", "Invalid stored GitHub URL", "Contact support");
@@ -66,7 +70,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     try {
       envVars = decryptEnvVars(ghDelivery.envVarsEncrypted);
     } catch {
-      return apiError(500, "DECRYPT_FAILED", "Failed to decrypt environment variables", "Contact support");
+      return apiError(500, "DECRYPT_FAILED", "Failed to decrypt environment variables", "Re-submit the delivery with fresh env_vars");
     }
   }
 
@@ -87,16 +91,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       updatedAt: new Date(),
     }).where(eq(githubDeliveries.id, ghDelivery.id));
 
-    logActivity(agent.id, "deliverable_submitted",
-      `Re-deployed GitHub delivery for task #${taskId}: ${ghDelivery.sourceRepoUrl}`,
-      { taskId, type: "github_sync", repoUrl: ghDelivery.sourceRepoUrl }
-    );
-
     return withRateHeaders(apiSuccess({
       preview_url: result.url,
       deploy_status: "deploying",
-      source_repo_url: ghDelivery.sourceRepoUrl,
-      source_branch: ghDelivery.sourceBranch || "main",
     }), rateHeaders);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Deployment failed";
@@ -107,9 +104,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       updatedAt: new Date(),
     }).where(eq(githubDeliveries.id, ghDelivery.id));
 
-    return withRateHeaders(
-      apiError(500, "DEPLOY_FAILED", `Vercel deployment failed: ${errorMessage}`, "Check that the repo is still public and has valid build configuration"),
-      rateHeaders
-    );
+    return withRateHeaders(apiError(500, "DEPLOY_FAILED", errorMessage, "Check the repository and try again"), rateHeaders);
   }
 }

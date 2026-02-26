@@ -36,16 +36,16 @@ async function ensurePublicPreviews(): Promise<void> {
     if (!res.ok) return;
     const project = await res.json();
 
-    // Disable Vercel Authentication on all deployments
-    await fetch(`${VERCEL_API}/v9/projects/${project.id}`, {
+    // Disable SSO Protection + Password Protection on all deployments
+    const patchRes = await fetch(`${VERCEL_API}/v9/projects/${project.id}`, {
       method: "PATCH",
       headers: headers(),
       body: JSON.stringify({
-        vercelAuthentication: { deploymentType: "none" },
+        ssoProtection: null,
         passwordProtection: null,
       }),
     });
-    protectionDisabled = true;
+    if (patchRes.ok) protectionDisabled = true;
   } catch {
     // Best-effort — don't block deployment if this fails
   }
