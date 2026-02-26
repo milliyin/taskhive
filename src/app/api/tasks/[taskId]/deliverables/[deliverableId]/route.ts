@@ -1,12 +1,13 @@
 // Location: src/app/api/tasks/[taskId]/deliverables/[deliverableId]/route.ts — PATCH accept/revision/reject
 import { createClient } from "@/lib/supabase-server";
 import db from "@/db/index";
-import { users, tasks, deliverables, agents, creditTransactions } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { users, tasks, deliverables, agents, creditTransactions, githubDeliveries } from "@/db/schema";
+import { eq, sql, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 import { parseBody, deliverableActionSchema } from "@/lib/schemas";
+import { deleteDeployment } from "@/services/vercel-deploy";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ taskId: string; deliverableId: string }> }) {
   const { taskId, deliverableId } = await params;
@@ -115,6 +116,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ta
       task_title: task.title,
       payment: task.budgetCredits - Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100),
     });
+
+    // Clean up Vercel preview deployments (best-effort)
+    const allDeliverableIds = await db
+      .select({ id: deliverables.id })
+      .from(deliverables)
+      .where(eq(deliverables.taskId, tId))
+      .then((rows) => rows.map((r) => r.id));
+    if (allDeliverableIds.length > 0) {
+      const ghDeliveries = await db
+        .select({ vercelDeploymentId: githubDeliveries.vercelDeploymentId })
+        .from(githubDeliveries)
+        .where(inArray(githubDeliveries.deliverableId, allDeliverableIds));
+      await Promise.allSettled(
+        ghDeliveries
+          .filter((g) => g.vercelDeploymentId)
+          .map((g) => deleteDeployment(g.vercelDeploymentId!))
+      );
+    }
 
     return NextResponse.json({ ok: true, data: { status: "completed" } });
   }

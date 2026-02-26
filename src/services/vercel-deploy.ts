@@ -66,6 +66,18 @@ export async function createGitDeployment(
   };
 }
 
+/** Delete a deployment (best-effort, does not throw on failure) */
+export async function deleteDeployment(deploymentId: string): Promise<void> {
+  try {
+    await fetch(`${VERCEL_API}/v13/deployments/${deploymentId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+  } catch {
+    // Best-effort — don't block callers if deletion fails
+  }
+}
+
 /** Check deployment status */
 export async function getDeploymentStatus(deploymentId: string): Promise<DeploymentResult> {
   const res = await fetch(`${VERCEL_API}/v13/deployments/${deploymentId}`, {

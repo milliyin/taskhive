@@ -23,7 +23,7 @@ export default function UserMenu({ name, currentView }: { name: string; currentV
     const newView = currentView === "client" ? "freelancer" : "client";
     document.cookie = `dashboard_view=${newView};path=/;max-age=${60 * 60 * 24 * 365}`;
     setOpen(false);
-    router.refresh();
+    router.push(newView === "client" ? "/tasks" : "/browse");
   }
 
   return (

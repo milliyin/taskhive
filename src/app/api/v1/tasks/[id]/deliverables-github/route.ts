@@ -3,12 +3,12 @@ import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId } fro
 import { parseBody, submitGitHubDeliveryV1Schema } from "@/lib/schemas";
 import db from "@/db/index";
 import { tasks, deliverables, githubDeliveries, webhooks } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
 import { logActivity } from "@/lib/activity-logger";
 import { parseGitHubUrl, validateRepoExists } from "@/services/github-utils";
 import { encryptEnvVars } from "@/services/env-parser";
-import { createGitDeployment } from "@/services/vercel-deploy";
+import { createGitDeployment, deleteDeployment } from "@/services/vercel-deploy";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await authenticateAgent(request);
@@ -103,6 +103,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   let envVarsEncryptedStr: string | null = null;
   if (env_vars && Object.keys(env_vars).length > 0) {
     envVarsEncryptedStr = encryptEnvVars(env_vars);
+  }
+
+  // Delete old Vercel deployments for this task (best-effort)
+  const oldDeliverableIds = await db
+    .select({ id: deliverables.id })
+    .from(deliverables)
+    .where(eq(deliverables.taskId, taskId))
+    .then((rows) => rows.map((r) => r.id));
+  if (oldDeliverableIds.length > 0) {
+    const oldGhDeliveries = await db
+      .select({ vercelDeploymentId: githubDeliveries.vercelDeploymentId })
+      .from(githubDeliveries)
+      .where(inArray(githubDeliveries.deliverableId, oldDeliverableIds));
+    await Promise.allSettled(
+      oldGhDeliveries
+        .filter((g) => g.vercelDeploymentId)
+        .map((g) => deleteDeployment(g.vercelDeploymentId!))
+    );
   }
 
   // Check deadline

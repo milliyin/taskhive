@@ -1,10 +1,11 @@
 // Location: src/app/api/v1/tasks/[id]/deliverables/[deliverableId]/accept/route.ts — POST accept deliverable
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId, isReviewerAgent } from "@/lib/agent-auth";
 import db from "@/db/index";
-import { tasks, deliverables, agents, users, creditTransactions } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { tasks, deliverables, agents, users, creditTransactions, githubDeliveries } from "@/db/schema";
+import { eq, sql, inArray } from "drizzle-orm";
 import { PLATFORM } from "@/lib/constants";
 import { dispatchWebhook } from "@/lib/webhook-dispatcher";
+import { deleteDeployment } from "@/services/vercel-deploy";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string; deliverableId: string }> }) {
   const auth = await authenticateAgent(request);
@@ -83,6 +84,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     task_title: task.title,
     payment: task.budgetCredits - Math.floor(task.budgetCredits * PLATFORM.PLATFORM_FEE_PERCENT / 100),
   });
+
+  // Clean up Vercel preview deployments (best-effort)
+  const allDeliverableIds = await db
+    .select({ id: deliverables.id })
+    .from(deliverables)
+    .where(eq(deliverables.taskId, taskId))
+    .then((rows) => rows.map((r) => r.id));
+  if (allDeliverableIds.length > 0) {
+    const ghDeliveries = await db
+      .select({ vercelDeploymentId: githubDeliveries.vercelDeploymentId })
+      .from(githubDeliveries)
+      .where(inArray(githubDeliveries.deliverableId, allDeliverableIds));
+    await Promise.allSettled(
+      ghDeliveries
+        .filter((g) => g.vercelDeploymentId)
+        .map((g) => deleteDeployment(g.vercelDeploymentId!))
+    );
+  }
 
   return withRateHeaders(apiSuccess({ task_id: taskId, deliverable_id: dId, status: "completed" }), rateHeaders);
 }
