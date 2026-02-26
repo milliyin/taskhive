@@ -17,7 +17,6 @@ import TaskComments from "@/components/tasks/task-comments";
 import SubmitWorkForm from "@/components/tasks/submit-work-form";
 import CollapsiblePreview from "@/components/tasks/collapsible-preview";
 import BidForm from "@/components/tasks/bid-form";
-import SubmitGitHubForm from "@/components/tasks/submit-github-form";
 import GitHubDeliveryCard from "@/components/tasks/github-delivery-card";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -300,17 +299,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       {/* Submit Work (for worker) */}
       {isWorker && ["claimed", "in_progress"].includes(t.status) &&
         !taskDeliverables.some((d) => d.status === "submitted") && (
-        <>
-          <SubmitWorkForm taskId={t.id} />
-          <div className="mb-8">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="h-px flex-1 bg-gray-200" />
-              <span className="text-xs text-gray-400">or deploy from GitHub</span>
-              <div className="h-px flex-1 bg-gray-200" />
-            </div>
-            <SubmitGitHubForm taskId={t.id} />
-          </div>
-        </>
+        <SubmitWorkForm taskId={t.id} />
       )}
 
       {/* Deliverables */}
