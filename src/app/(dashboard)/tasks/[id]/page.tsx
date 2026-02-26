@@ -1,8 +1,8 @@
 import { getUser } from "@/lib/auth";
 import { getDashboardView } from "@/lib/view-toggle";
 import db from "@/db/index";
-import { tasks, categories, agents, taskClaims, deliverables, deliverableFiles, taskAttachments, reviews } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { tasks, categories, agents, taskClaims, deliverables, deliverableFiles, taskAttachments, reviews, githubDeliveries } from "@/db/schema";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import StatusBadge from "@/components/ui/status-badge";
@@ -17,6 +17,8 @@ import TaskComments from "@/components/tasks/task-comments";
 import SubmitWorkForm from "@/components/tasks/submit-work-form";
 import CollapsiblePreview from "@/components/tasks/collapsible-preview";
 import BidForm from "@/components/tasks/bid-form";
+import SubmitGitHubForm from "@/components/tasks/submit-github-form";
+import GitHubDeliveryCard from "@/components/tasks/github-delivery-card";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -109,6 +111,16 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     const arr = filesByDeliverable.get(f.deliverableId) || [];
     arr.push(f);
     filesByDeliverable.set(f.deliverableId, arr);
+  }
+
+  // Fetch GitHub deliveries
+  const deliverableIds = taskDeliverables.map((d) => d.id);
+  const allGithubDeliveries = deliverableIds.length > 0
+    ? await db.select().from(githubDeliveries).where(inArray(githubDeliveries.deliverableId, deliverableIds))
+    : [];
+  const ghByDeliverable = new Map<number, (typeof allGithubDeliveries)[number]>();
+  for (const gh of allGithubDeliveries) {
+    ghByDeliverable.set(gh.deliverableId, gh);
   }
 
   // Fetch task attachments
@@ -288,7 +300,17 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       {/* Submit Work (for worker) */}
       {isWorker && ["claimed", "in_progress"].includes(t.status) &&
         !taskDeliverables.some((d) => d.status === "submitted") && (
-        <SubmitWorkForm taskId={t.id} />
+        <>
+          <SubmitWorkForm taskId={t.id} />
+          <div className="mb-8">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400">or deploy from GitHub</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+            <SubmitGitHubForm taskId={t.id} />
+          </div>
+        </>
       )}
 
       {/* Deliverables */}
@@ -315,6 +337,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               }));
               const hasWebFiles = dFiles.some((f) => f.file_type === "html");
               const isLatest = idx === 0;
+              const ghDelivery = ghByDeliverable.get(d.id);
 
               return (
                 <div
@@ -330,6 +353,19 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   {d.content && (
                     <div className="mb-3 max-h-60 overflow-y-auto rounded bg-gray-50 p-3">
                       <pre className="whitespace-pre-wrap text-sm">{d.content}</pre>
+                    </div>
+                  )}
+                  {ghDelivery && (
+                    <div className="mb-3">
+                      <GitHubDeliveryCard
+                        taskId={t.id}
+                        sourceRepoUrl={ghDelivery.sourceRepoUrl}
+                        sourceBranch={ghDelivery.sourceBranch}
+                        previewUrl={ghDelivery.previewUrl}
+                        deployStatus={ghDelivery.deployStatus}
+                        errorMessage={ghDelivery.errorMessage}
+                        isWorker={isWorker}
+                      />
                     </div>
                   )}
                   {hasWebFiles && isLatest && (

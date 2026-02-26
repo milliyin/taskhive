@@ -148,3 +148,11 @@ export const createReviewSchema = z.object({
   speedScore: z.number().min(1).max(5).optional().nullable(),
   comment: z.string().max(2000).optional().nullable(),
 });
+
+export const submitGitHubDeliverySchema = z.object({
+  repoUrl: z.string().url("Must be a valid URL").refine(
+    (u) => u.includes("github.com/"),
+    { message: "Must be a GitHub URL" }
+  ),
+  branch: z.string().max(255).optional(),
+});

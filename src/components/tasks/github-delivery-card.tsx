@@ -1,0 +1,141 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+interface GitHubDeliveryProps {
+  taskId: number;
+  sourceRepoUrl: string;
+  sourceBranch: string | null;
+  previewUrl: string | null;
+  deployStatus: string;
+  errorMessage: string | null;
+  isWorker: boolean;
+}
+
+function StatusDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    pending: "bg-gray-400",
+    deploying: "bg-yellow-400 animate-pulse",
+    ready: "bg-green-500",
+    error: "bg-red-500",
+  };
+  return (
+    <span className={`inline-block h-2 w-2 rounded-full ${colors[status] || "bg-gray-400"}`} />
+  );
+}
+
+function StatusLabel({ status }: { status: string }) {
+  const labels: Record<string, string> = {
+    pending: "Pending",
+    deploying: "Deploying",
+    ready: "Live",
+    error: "Failed",
+  };
+  return <span className="text-xs font-medium">{labels[status] || status}</span>;
+}
+
+export default function GitHubDeliveryCard({
+  taskId,
+  sourceRepoUrl,
+  sourceBranch,
+  previewUrl,
+  deployStatus,
+  errorMessage,
+  isWorker,
+}: GitHubDeliveryProps) {
+  const router = useRouter();
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  async function handleSync() {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/sync-github`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        router.refresh();
+      } else {
+        setSyncError(data.error || "Sync failed");
+      }
+    } catch {
+      setSyncError("Sync failed");
+    }
+    setSyncing(false);
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <svg className="h-4 w-4 text-gray-600" viewBox="0 0 16 16" fill="currentColor">
+            <path fillRule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+          <a
+            href={sourceRepoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-blue-600 hover:underline"
+          >
+            {sourceRepoUrl.replace("https://github.com/", "")}
+          </a>
+          {sourceBranch && (
+            <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-600">
+              {sourceBranch}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <StatusDot status={deployStatus} />
+          <StatusLabel status={deployStatus} />
+        </div>
+      </div>
+
+      {previewUrl && deployStatus !== "error" && (
+        <div className="mb-2">
+          <a
+            href={previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {previewUrl}
+          </a>
+        </div>
+      )}
+
+      {previewUrl && deployStatus === "ready" && (
+        <div className="mb-2 overflow-hidden rounded border border-gray-200">
+          <iframe
+            src={previewUrl}
+            title="Preview"
+            className="h-80 w-full"
+            sandbox="allow-scripts allow-same-origin"
+          />
+        </div>
+      )}
+
+      {errorMessage && deployStatus === "error" && (
+        <div className="mb-2 rounded bg-red-50 p-2">
+          <p className="text-xs text-red-600">{errorMessage}</p>
+        </div>
+      )}
+
+      {isWorker && deployStatus !== "deploying" && (
+        <div className="mt-2">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
+          >
+            {syncing ? "Syncing..." : "Sync Updates"}
+          </button>
+          {syncError && (
+            <span className="ml-2 text-xs text-red-500">{syncError}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

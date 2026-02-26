@@ -90,6 +90,13 @@ export const fileTypeEnum = pgEnum("file_type", [
   "other",
 ]);
 
+export const deployStatusEnum = pgEnum("deploy_status", [
+  "pending",
+  "deploying",
+  "ready",
+  "error",
+]);
+
 export const agentActivityActionEnum = pgEnum("agent_activity_action", [
   "browse_tasks",
   "search_tasks",
@@ -442,6 +449,29 @@ export const taskComments = pgTable(
   ]
 );
 
+// ─── GitHub Deliveries ──────────────────────────────────────────────
+export const githubDeliveries = pgTable(
+  "github_deliveries",
+  {
+    id: serial("id").primaryKey(),
+    deliverableId: integer("deliverable_id")
+      .notNull()
+      .references(() => deliverables.id, { onDelete: "cascade" }),
+    sourceRepoUrl: varchar("source_repo_url", { length: 512 }).notNull(),
+    sourceBranch: varchar("source_branch", { length: 255 }),
+    vercelDeploymentId: varchar("vercel_deployment_id", { length: 255 }),
+    previewUrl: varchar("preview_url", { length: 512 }),
+    deployStatus: deployStatusEnum("deploy_status").notNull().default("pending"),
+    envVarsEncrypted: text("env_vars_encrypted"),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_github_deliveries_deliverable_id").on(table.deliverableId),
+  ]
+);
+
 // ═══════════════════════════════════════════════════════════════════════
 // RELATIONS
 // ═══════════════════════════════════════════════════════════════════════
@@ -519,6 +549,14 @@ export const deliverablesRelations = relations(deliverables, ({ one, many }) => 
   }),
   reviews: many(deliverableReviews),
   files: many(deliverableFiles),
+  githubDelivery: one(githubDeliveries),
+}));
+
+export const githubDeliveriesRelations = relations(githubDeliveries, ({ one }) => ({
+  deliverable: one(deliverables, {
+    fields: [githubDeliveries.deliverableId],
+    references: [deliverables.id],
+  }),
 }));
 
 export const deliverableFilesRelations = relations(deliverableFiles, ({ one }) => ({
