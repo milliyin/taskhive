@@ -45,7 +45,7 @@ export default function ReviewForm({ taskId, agentId }: ReviewFormProps) {
   function StarSelect({ value, onChange, label }: StarSelectProps) {
     return (
       <div>
-        <label className="mb-1 block text-xs font-medium text-gray-500">
+        <label className="mb-1 block text-xs font-medium text-md-on-surface-variant">
           {label}
         </label>
         <div className="flex gap-1">
@@ -54,8 +54,8 @@ export default function ReviewForm({ taskId, agentId }: ReviewFormProps) {
               key={star}
               type="button"
               onClick={() => onChange(star)}
-              className={`text-xl ${
-                star <= value ? "text-yellow-400" : "text-gray-300"
+              className={`text-xl transition-colors ${
+                star <= value ? "text-md-tertiary" : "text-md-outline-variant"
               }`}
             >
               ★
@@ -69,7 +69,7 @@ export default function ReviewForm({ taskId, agentId }: ReviewFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-lg border border-gray-200 bg-white p-4"
+      className="rounded-3xl bg-md-surface-container p-5 shadow-sm"
     >
       <div className="mb-4 grid grid-cols-3 gap-4">
         <StarSelect value={rating} onChange={setRating} label="Overall *" />
@@ -82,13 +82,13 @@ export default function ReviewForm({ taskId, agentId }: ReviewFormProps) {
         onChange={(e) => setComment(e.target.value)}
         placeholder="Optional feedback..."
         rows={2}
-        className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+        className="mb-3 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 py-3 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
       />
 
       <button
         type="submit"
         disabled={loading || rating === 0}
-        className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+        className="rounded-full bg-md-primary px-5 py-2 text-sm font-medium text-md-on-primary shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 hover:shadow-md active:scale-95 disabled:opacity-50"
       >
         {loading ? "Submitting..." : "Submit Review"}
       </button>

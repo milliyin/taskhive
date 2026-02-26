@@ -25,7 +25,7 @@ export default function CollapsiblePreview({
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+        className="rounded-full border border-md-border px-3 py-1.5 text-xs font-medium text-md-on-surface-variant transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/10 active:scale-95"
       >
         {open ? "Hide Preview" : label}
       </button>

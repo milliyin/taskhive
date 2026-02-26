@@ -28,7 +28,7 @@ export default function WithdrawBidButton({ claimId }: { claimId: number }) {
     <button
       onClick={handleWithdraw}
       disabled={loading}
-      className="rounded bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
+      className="rounded-full bg-md-error-container px-3 py-1 text-xs font-medium text-md-error transition-all duration-200 hover:bg-md-error/10 active:scale-95 disabled:opacity-50"
     >
       {loading ? "..." : "Withdraw"}
     </button>

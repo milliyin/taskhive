@@ -49,8 +49,8 @@ export default function AutoReviewButton({ taskId, hasLlmKey }: AutoReviewButton
 
   if (!hasLlmKey) {
     return (
-      <div className="text-xs text-gray-400">
-        <a href="/profile" className="underline hover:text-gray-600">Set up an LLM key</a> to enable AI review.
+      <div className="text-xs text-md-on-surface-variant">
+        <a href="/profile" className="text-md-primary underline hover:no-underline">Set up an LLM key</a> to enable AI review.
       </div>
     );
   }
@@ -60,17 +60,17 @@ export default function AutoReviewButton({ taskId, hasLlmKey }: AutoReviewButton
       <button
         onClick={handleReview}
         disabled={loading}
-        className="rounded bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-violet-700 disabled:opacity-50"
+        className="rounded-full bg-md-primary px-4 py-1.5 text-xs font-medium text-md-on-primary shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 hover:shadow-md active:scale-95 disabled:opacity-50"
       >
         {loading ? "Reviewing..." : "AI Review"}
       </button>
 
       {error && (
-        <p className="mt-2 text-xs text-red-600">{error}</p>
+        <p className="mt-2 text-xs text-md-error">{error}</p>
       )}
 
       {result && (
-        <div className={`mt-2 rounded p-2 text-xs ${result.verdict === "pass" ? "bg-green-50 text-green-800" : "bg-orange-50 text-orange-800"}`}>
+        <div className={`mt-2 rounded-2xl p-3 text-xs ${result.verdict === "pass" ? "bg-md-success-container text-md-success" : "bg-md-error-container text-md-error"}`}>
           <p className="font-medium">
             {result.verdict === "pass" ? "PASS — Deliverable accepted" : "FAIL — Revision requested"}
           </p>

@@ -27,14 +27,14 @@ export default function ClaimActions({ claimId, taskId }: ClaimActionsProps) {
       <button
         onClick={() => handleAction("accept")}
         disabled={loading}
-        className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
+        className="rounded-full bg-md-success px-3 py-1 text-xs font-medium text-white transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-success/90 active:scale-95 disabled:opacity-50"
       >
         Accept
       </button>
       <button
         onClick={() => handleAction("reject")}
         disabled={loading}
-        className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-700 transition hover:bg-red-200 disabled:opacity-50"
+        className="rounded-full bg-md-error-container px-3 py-1 text-xs font-medium text-md-error transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-error/10 active:scale-95 disabled:opacity-50"
       >
         Reject
       </button>

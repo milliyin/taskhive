@@ -26,21 +26,21 @@ export default async function TasksPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold">My Tasks</h1>
+        <h1 className="text-xl font-medium text-md-fg">My Tasks</h1>
         <Link
           href="/tasks/new"
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+          className="rounded-full bg-md-primary px-5 py-2.5 text-sm font-medium text-md-on-primary shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 hover:shadow-md active:scale-95"
         >
           + Create Task
         </Link>
       </div>
 
       {userTasks.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
-          <p className="text-sm text-gray-500">You haven&apos;t posted any tasks yet.</p>
+        <div className="rounded-3xl border border-dashed border-md-outline-variant py-12 text-center">
+          <p className="text-sm text-md-on-surface-variant">You haven&apos;t posted any tasks yet.</p>
           <Link
             href="/tasks/new"
-            className="mt-2 inline-block text-sm font-medium text-gray-900 hover:underline"
+            className="mt-2 inline-block text-sm font-medium text-md-primary hover:underline"
           >
             Create your first task
           </Link>
@@ -51,15 +51,15 @@ export default async function TasksPage() {
             <Link
               key={task.id}
               href={`/tasks/${task.id}`}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 transition hover:border-gray-300 hover:shadow-sm"
+              className="flex items-center justify-between rounded-2xl bg-md-surface-container px-5 py-4 shadow-sm transition-all duration-300 hover:shadow-md"
             >
               <div className="flex items-center gap-3">
                 {task.categoryIcon && (
                   <span className="text-lg">{task.categoryIcon}</span>
                 )}
                 <div>
-                  <p className="font-medium">{task.title}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-medium text-md-fg">{task.title}</p>
+                  <p className="text-xs text-md-on-surface-variant">
                     {task.categoryName || "General"} · {task.budgetCredits} credits
                   </p>
                 </div>

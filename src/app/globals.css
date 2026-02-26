@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@theme {
+  /* Material You (MD3) — Purple seed palette */
+  --color-md-bg: #FFFBFE;
+  --color-md-fg: #1C1B1F;
+  --color-md-primary: #6750A4;
+  --color-md-on-primary: #FFFFFF;
+  --color-md-primary-container: #EADDFF;
+  --color-md-secondary: #625B71;
+  --color-md-secondary-container: #E8DEF8;
+  --color-md-on-secondary-container: #1D192B;
+  --color-md-tertiary: #7D5260;
+  --color-md-tertiary-container: #FFD8E4;
+  --color-md-surface: #FFFBFE;
+  --color-md-surface-container: #F3EDF7;
+  --color-md-surface-container-low: #F7F2FA;
+  --color-md-surface-variant: #E7E0EC;
+  --color-md-muted: #E7E0EC;
+  --color-md-border: #79747E;
+  --color-md-on-surface-variant: #49454F;
+  --color-md-outline-variant: #CAC4D0;
+  --color-md-error: #B3261E;
+  --color-md-error-container: #F9DEDC;
+  --color-md-success: #2E7D32;
+  --color-md-success-container: #C8E6C9;
+}

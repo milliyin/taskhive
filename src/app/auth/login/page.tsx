@@ -42,40 +42,40 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-screen items-center justify-center bg-md-bg px-4">
       <div className="w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-bold">Sign in</h1>
-        <p className="mb-6 text-sm text-gray-500">
+        <h1 className="mb-1 text-2xl font-medium text-md-fg">Sign in</h1>
+        <p className="mb-6 text-sm text-md-on-surface-variant">
           Welcome back to TaskHive
         </p>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div className="mb-4 rounded-2xl bg-md-error-container px-4 py-3 text-sm text-md-error">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Email</label>
+            <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+              className="h-14 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Password</label>
+            <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+              className="h-14 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
               placeholder="••••••••"
             />
           </div>
@@ -83,25 +83,25 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+            className="rounded-full bg-md-primary py-3 text-sm font-medium text-md-on-primary shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 hover:shadow-md active:scale-95 disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <div className="relative my-4">
+        <div className="relative my-5">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
+            <div className="w-full border-t border-md-outline-variant" />
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="bg-white px-4 text-gray-400">or</span>
+            <span className="bg-md-bg px-4 text-md-on-surface-variant">or</span>
           </div>
         </div>
 
         <button
           onClick={handleGoogleSignIn}
           type="button"
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          className="flex w-full items-center justify-center gap-3 rounded-full border border-md-border bg-md-bg py-3 text-sm font-medium text-md-fg transition-all duration-300 hover:bg-md-primary/5 active:scale-95"
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -112,9 +112,9 @@ export default function LoginPage() {
           Sign in with Google
         </button>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 text-center text-sm text-md-on-surface-variant">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/register" className="font-medium text-gray-900 hover:underline">
+          <Link href="/auth/register" className="font-medium text-md-primary hover:underline">
             Register
           </Link>
         </p>

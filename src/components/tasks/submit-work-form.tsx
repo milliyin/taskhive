@@ -78,11 +78,11 @@ export default function SubmitWorkForm({ taskId }: { taskId: number }) {
 
   return (
     <div className="mb-8">
-      <h2 className="mb-3 text-lg font-semibold">Submit Work</h2>
-      <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4">
+      <h2 className="mb-3 text-lg font-medium text-md-fg">Submit Work</h2>
+      <div className="space-y-4 rounded-3xl bg-md-surface-container p-5 shadow-sm">
         {/* Delivery notes */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">
+          <label className="mb-1 block text-xs font-medium text-md-on-surface-variant">
             Delivery Notes
           </label>
           <textarea
@@ -90,22 +90,22 @@ export default function SubmitWorkForm({ taskId }: { taskId: number }) {
             onChange={(e) => setContent(e.target.value)}
             placeholder="Describe your work, add notes or paste content..."
             rows={3}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className="w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 py-3 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
           />
         </div>
 
         {/* File uploads */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">
-            Files <span className="text-xs font-normal text-gray-400">(optional)</span>
+          <label className="mb-1 block text-xs font-medium text-md-on-surface-variant">
+            Files <span className="text-xs font-normal text-md-on-surface-variant/50">(optional)</span>
           </label>
 
           {files.length > 0 && (
             <div className="mb-2 space-y-1">
               {files.map((f, i) => (
-                <div key={i} className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-1.5">
-                  <span className="text-sm">{f.name} <span className="text-xs text-gray-400">({formatBytes(f.size)})</span></span>
-                  <button onClick={() => removeFile(i)} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                <div key={i} className="flex items-center justify-between rounded-xl bg-md-surface-variant px-3 py-1.5">
+                  <span className="text-sm text-md-fg">{f.name} <span className="text-xs text-md-on-surface-variant/70">({formatBytes(f.size)})</span></span>
+                  <button onClick={() => removeFile(i)} className="text-xs text-md-error hover:text-md-error/80">Remove</button>
                 </div>
               ))}
             </div>
@@ -113,7 +113,7 @@ export default function SubmitWorkForm({ taskId }: { taskId: number }) {
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50"
+            className="rounded-full border border-md-border px-3 py-1.5 text-sm text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10 active:scale-95"
           >
             Attach Files
           </button>
@@ -125,48 +125,48 @@ export default function SubmitWorkForm({ taskId }: { taskId: number }) {
             className="hidden"
             accept=".html,.css,.js,.ts,.jsx,.tsx,.json,.txt,.md,.png,.jpg,.jpeg,.gif,.svg,.webp,.pdf,.zip"
           />
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-md-on-surface-variant/70">
             Max 10 files, 10MB each.
           </p>
         </div>
 
         {/* GitHub repo (optional) */}
-        <div className="border-t border-gray-100 pt-4">
-          <label className="mb-1 block text-xs font-medium text-gray-600">
-            GitHub Repository <span className="text-xs font-normal text-gray-400">(optional)</span>
+        <div className="border-t border-md-outline-variant/20 pt-4">
+          <label className="mb-1 block text-xs font-medium text-md-on-surface-variant">
+            GitHub Repository <span className="text-xs font-normal text-md-on-surface-variant/50">(optional)</span>
           </label>
           <input
             type="url"
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             placeholder="https://github.com/owner/repo"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className="w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 py-3 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
           />
 
           {repoUrl.trim() && (
             <div className="mt-2 space-y-2">
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">
-                  Branch <span className="text-xs font-normal text-gray-400">(defaults to main)</span>
+                <label className="mb-1 block text-xs font-medium text-md-on-surface-variant">
+                  Branch <span className="text-xs font-normal text-md-on-surface-variant/50">(defaults to main)</span>
                 </label>
                 <input
                   type="text"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
                   placeholder="main"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                  className="w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 py-3 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">
-                  Environment File <span className="text-xs font-normal text-gray-400">(.env)</span>
+                <label className="mb-1 block text-xs font-medium text-md-on-surface-variant">
+                  Environment File <span className="text-xs font-normal text-md-on-surface-variant/50">(.env)</span>
                 </label>
                 {envFile ? (
-                  <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-1.5">
-                    <span className="text-sm">{envFile.name}</span>
+                  <div className="flex items-center justify-between rounded-xl bg-md-surface-variant px-3 py-1.5">
+                    <span className="text-sm text-md-fg">{envFile.name}</span>
                     <button
                       onClick={() => { setEnvFile(null); if (envFileInputRef.current) envFileInputRef.current.value = ""; }}
-                      className="text-xs text-red-500 hover:text-red-700"
+                      className="text-xs text-md-error hover:text-md-error/80"
                     >
                       Remove
                     </button>
@@ -174,7 +174,7 @@ export default function SubmitWorkForm({ taskId }: { taskId: number }) {
                 ) : (
                   <button
                     onClick={() => envFileInputRef.current?.click()}
-                    className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50"
+                    className="rounded-full border border-md-border px-3 py-1.5 text-sm text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10 active:scale-95"
                   >
                     Upload .env file
                   </button>
@@ -187,7 +187,7 @@ export default function SubmitWorkForm({ taskId }: { taskId: number }) {
                   accept=".env,.env.local,.env.production,.env.development"
                 />
               </div>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-md-on-surface-variant/70">
                 If the repo is a web project, a live preview will be deployed automatically.
               </p>
             </div>
@@ -199,14 +199,14 @@ export default function SubmitWorkForm({ taskId }: { taskId: number }) {
           <button
             onClick={handleSubmit}
             disabled={submitting || !canSubmit}
-            className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
+            className="rounded-full bg-md-success px-5 py-2 text-sm font-medium text-white shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-success/90 hover:shadow-md active:scale-95 disabled:opacity-50"
           >
             {submitting ? "Submitting..." : "Submit Deliverable"}
           </button>
         </div>
 
         {error && (
-          <p className="rounded bg-red-50 p-2 text-xs text-red-600">{error}</p>
+          <p className="rounded-xl bg-md-error-container p-2 text-xs text-md-error">{error}</p>
         )}
       </div>
     </div>

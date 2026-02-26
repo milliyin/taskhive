@@ -153,7 +153,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           <div className="flex items-center gap-3">
             <StatusBadge status={t.status} />
             {task.categoryIcon && <span>{task.categoryIcon}</span>}
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-md-on-surface-variant">
               {task.categoryName || "General"}
             </span>
           </div>
@@ -161,22 +161,22 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             <CancelTaskButton taskId={t.id} />
           )}
         </div>
-        <h1 className="text-2xl font-bold">{t.title}</h1>
+        <h1 className="text-2xl font-medium text-md-fg">{t.title}</h1>
       </div>
 
       {/* Info grid */}
-      <div className="mb-6 grid grid-cols-3 gap-4 rounded-lg border border-gray-200 bg-white p-4">
+      <div className="mb-6 grid grid-cols-3 gap-4 rounded-3xl bg-md-surface-container p-5 shadow-sm">
         <div>
-          <p className="text-xs text-gray-500">Budget</p>
-          <p className="font-semibold">{t.budgetCredits} credits</p>
+          <p className="text-xs text-md-on-surface-variant">Budget</p>
+          <p className="font-medium text-md-fg">{t.budgetCredits} credits</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Max Revisions</p>
-          <p className="font-semibold">{t.maxRevisions}</p>
+          <p className="text-xs text-md-on-surface-variant">Max Revisions</p>
+          <p className="font-medium text-md-fg">{t.maxRevisions}</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500">Deadline</p>
-          <p className="font-semibold">
+          <p className="text-xs text-md-on-surface-variant">Deadline</p>
+          <p className="font-medium text-md-fg">
             {t.deadline
               ? new Date(t.deadline).toLocaleDateString()
               : "None"}
@@ -185,15 +185,15 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Description */}
-      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="mb-2 text-sm font-semibold text-gray-500">Description</h2>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{t.description}</p>
+      <div className="mb-8 rounded-3xl bg-md-surface-container p-5 shadow-sm">
+        <h2 className="mb-2 text-sm font-medium text-md-on-surface-variant">Description</h2>
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-md-fg">{t.description}</p>
         {t.requirements && (
           <>
-            <h2 className="mb-2 mt-4 text-sm font-semibold text-gray-500">
+            <h2 className="mb-2 mt-4 text-sm font-medium text-md-on-surface-variant">
               Requirements
             </h2>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-md-fg">
               {t.requirements}
             </p>
           </>
@@ -202,7 +202,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
       {/* Task Attachments */}
       <div className="mb-6">
-        <h2 className="mb-3 text-sm font-semibold text-gray-500">
+        <h2 className="mb-3 text-sm font-medium text-md-on-surface-variant">
           Reference Files ({attachments.length})
         </h2>
         {attachments.length > 0 && (
@@ -210,17 +210,17 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             {attachments.map((a) => {
               const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/task-attachments/${a.storagePath}`;
               return (
-                <div key={a.id} className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                <div key={a.id} className="flex items-center justify-between rounded-2xl bg-md-surface-variant px-3 py-2">
                   <div className="flex items-center gap-2">
                     <a
                       href={publicUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-blue-600 hover:underline"
+                      className="text-sm font-medium text-md-primary hover:underline"
                     >
                       {a.originalName}
                     </a>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-md-on-surface-variant">
                       {a.sizeBytes < 1024 * 1024
                         ? `${(a.sizeBytes / 1024).toFixed(1)} KB`
                         : `${(a.sizeBytes / (1024 * 1024)).toFixed(1)} MB`}
@@ -229,7 +229,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   <a
                     href={publicUrl}
                     download={a.originalName}
-                    className="text-xs text-gray-500 hover:text-gray-700"
+                    className="text-xs text-md-on-surface-variant hover:text-md-primary"
                   >
                     Download
                   </a>
@@ -242,7 +242,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
           <FileUpload taskId={t.id} existingCount={attachments.length} maxFiles={5} />
         )}
         {attachments.length === 0 && !["open", "claimed"].includes(t.status) && (
-          <p className="text-sm text-gray-500">No reference files attached.</p>
+          <p className="text-sm text-md-on-surface-variant">No reference files attached.</p>
         )}
       </div>
 
@@ -250,15 +250,15 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       {currentView === "freelancer" && !isPoster && t.status === "open" && (
         <>
           {!userAgent ? (
-            <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-              <p className="text-sm text-yellow-800">
+            <div className="mb-6 rounded-2xl bg-md-tertiary-container p-4">
+              <p className="text-sm text-md-tertiary">
                 You need an active agent to bid on tasks.{" "}
                 <Link href="/my-agent" className="font-medium underline">Claim an agent</Link> first.
               </p>
             </div>
           ) : existingClaim ? (
-            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm text-blue-800">
+            <div className="mb-6 rounded-2xl bg-md-primary-container p-4">
+              <p className="text-sm text-md-primary">
                 You already have a pending bid on this task ({existingClaim.proposedCredits} credits).
               </p>
             </div>
@@ -270,18 +270,18 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
       {/* Assigned agent */}
       {task.agentName && (
-        <div className="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4">
+        <div className="mb-6 rounded-2xl bg-md-primary-container p-4">
           <p className="text-sm">
-            <span className="text-gray-500">Assigned to:</span>{" "}
-            <span className="font-medium">{task.agentName}</span>
+            <span className="text-md-on-surface-variant">Assigned to:</span>{" "}
+            <span className="font-medium text-md-primary">{task.agentName}</span>
           </p>
         </div>
       )}
 
       {/* Worker banner */}
       {isWorker && (
-        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
-          <p className="text-sm font-medium text-green-800">
+        <div className="mb-6 rounded-2xl bg-md-success-container p-4">
+          <p className="text-sm font-medium text-md-success">
             You are working on this task via your agent ({task.agentName})
           </p>
         </div>
@@ -289,28 +289,28 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
       {/* Claims */}
       <div className="mb-8">
-        <h2 className="mb-3 text-lg font-semibold">
+        <h2 className="mb-3 text-lg font-medium text-md-fg">
           Claims ({claims.length})
         </h2>
         {claims.length === 0 ? (
-          <p className="text-sm text-gray-500">No claims yet. Waiting for agents to bid.</p>
+          <p className="text-sm text-md-on-surface-variant">No claims yet. Waiting for agents to bid.</p>
         ) : (
           <div className="space-y-3">
             {claims.map(({ claim, agentName, agentReputation, agentRating }) => (
               <div
                 key={claim.id}
-                className="rounded-lg border border-gray-200 bg-white p-4"
+                className="rounded-2xl bg-md-surface-container p-4 shadow-sm"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium">{agentName}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="font-medium text-md-fg">{agentName}</p>
+                    <p className="text-xs text-md-on-surface-variant">
                       Reputation: {agentReputation?.toFixed(0) ?? "–"} ·
                       Rating: {agentRating?.toFixed(1) ?? "–"} ·
                       Bid: {claim.proposedCredits} credits
                     </p>
                     {claim.message && (
-                      <p className="mt-2 text-sm text-gray-700">{claim.message}</p>
+                      <p className="mt-2 text-sm text-md-on-surface-variant">{claim.message}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -334,11 +334,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
       {/* Deliverables */}
       <div className="mb-8">
-        <h2 className="mb-3 text-lg font-semibold">
+        <h2 className="mb-3 text-lg font-medium text-md-fg">
           Deliverables ({taskDeliverables.length})
         </h2>
         {taskDeliverables.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-md-on-surface-variant">
             {t.claimedByAgentId
               ? "Waiting for the agent to submit work."
               : "No deliverables yet."}
@@ -362,17 +362,17 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               return (
                 <div
                   key={d.id}
-                  className="rounded-lg border border-gray-200 bg-white p-4"
+                  className="rounded-3xl bg-md-surface-container p-5 shadow-sm"
                 >
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium text-md-fg">
                       Revision #{d.revisionNumber}
                     </p>
                     <StatusBadge status={d.status} />
                   </div>
                   {d.content && (
-                    <div className="mb-3 max-h-60 overflow-y-auto rounded bg-gray-50 p-3">
-                      <pre className="whitespace-pre-wrap text-sm">{d.content}</pre>
+                    <div className="mb-3 max-h-60 overflow-y-auto rounded-xl bg-md-surface-variant p-3">
+                      <pre className="whitespace-pre-wrap text-sm text-md-fg">{d.content}</pre>
                     </div>
                   )}
                   {ghDelivery && (
@@ -400,37 +400,37 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   )}
                   {dFiles.length > 0 && (
                     <div className="mb-3">
-                      <p className="mb-2 text-xs font-medium text-gray-500">
+                      <p className="mb-2 text-xs font-medium text-md-on-surface-variant">
                         Files ({dFiles.length})
                       </p>
                       <FilePreview files={dFiles} />
                     </div>
                   )}
                   {d.revisionNotes && !aiReview && (
-                    <div className="mb-3 rounded bg-orange-50 p-3">
-                      <p className="text-xs font-medium text-orange-700">Revision Notes:</p>
-                      <p className="text-sm text-orange-800">{d.revisionNotes}</p>
+                    <div className="mb-3 rounded-xl bg-md-tertiary-container p-3">
+                      <p className="text-xs font-medium text-md-tertiary">Revision Notes:</p>
+                      <p className="text-sm text-md-tertiary">{d.revisionNotes}</p>
                     </div>
                   )}
                   {aiReview && (
-                    <div className={`mb-3 rounded p-3 ${aiReview.reviewResult === "pass" ? "bg-green-50" : "bg-orange-50"}`}>
+                    <div className={`mb-3 rounded-xl p-3 ${aiReview.reviewResult === "pass" ? "bg-md-success-container" : "bg-md-tertiary-container"}`}>
                       <div className="mb-1 flex items-center justify-between">
-                        <p className={`text-xs font-medium ${aiReview.reviewResult === "pass" ? "text-green-700" : "text-orange-700"}`}>
+                        <p className={`text-xs font-medium ${aiReview.reviewResult === "pass" ? "text-md-success" : "text-md-tertiary"}`}>
                           AI Review: {aiReview.reviewResult?.toUpperCase()}
                         </p>
                         {aiReview.llmModelUsed && (
-                          <span className="text-[10px] text-gray-400">{aiReview.llmModelUsed}</span>
+                          <span className="text-[10px] text-md-on-surface-variant/50">{aiReview.llmModelUsed}</span>
                         )}
                       </div>
                       {aiReview.reviewFeedback && (
-                        <p className={`text-sm ${aiReview.reviewResult === "pass" ? "text-green-800" : "text-orange-800"}`}>
+                        <p className={`text-sm ${aiReview.reviewResult === "pass" ? "text-md-success" : "text-md-tertiary"}`}>
                           {aiReview.reviewFeedback}
                         </p>
                       )}
                       {aiReview.reviewScores != null && typeof aiReview.reviewScores === "object" ? (
                         <div className="mt-2 flex flex-wrap gap-2">
                           {Object.keys(aiReview.reviewScores as object).map((key) => (
-                            <span key={key} className="rounded bg-white/60 px-1.5 py-0.5 text-[10px] text-gray-600">
+                            <span key={key} className="rounded-full bg-white/60 px-1.5 py-0.5 text-[10px] text-md-on-surface-variant">
                               {key.replace(/_/g, " ")}: {String((aiReview.reviewScores as Record<string, unknown>)[key])}/10
                             </span>
                           ))}
@@ -462,21 +462,21 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       {/* Review */}
       {isPoster && t.status === "completed" && !review && t.claimedByAgentId && (
         <div className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">Leave a Review</h2>
+          <h2 className="mb-3 text-lg font-medium text-md-fg">Leave a Review</h2>
           <ReviewForm taskId={t.id} agentId={t.claimedByAgentId} />
         </div>
       )}
 
       {isPoster && review && (
-        <div className="mb-8 rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="mb-2 text-lg font-semibold">Your Review</h2>
-          <div className="flex gap-4 text-sm">
+        <div className="mb-8 rounded-3xl bg-md-surface-container p-5 shadow-sm">
+          <h2 className="mb-2 text-lg font-medium text-md-fg">Your Review</h2>
+          <div className="flex gap-4 text-sm text-md-fg">
             <span>Overall: {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
             {review.qualityScore && <span>Quality: {review.qualityScore}/5</span>}
             {review.speedScore && <span>Speed: {review.speedScore}/5</span>}
           </div>
           {review.comment && (
-            <p className="mt-2 text-sm text-gray-700">{review.comment}</p>
+            <p className="mt-2 text-sm text-md-on-surface-variant">{review.comment}</p>
           )}
         </div>
       )}

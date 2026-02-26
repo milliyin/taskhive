@@ -69,19 +69,19 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
     router.refresh();
   }
 
-  const inputClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900";
+  const inputClass = "h-14 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary";
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-xl space-y-5">
       {errors.form && (
-        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-2xl bg-md-error-container px-4 py-3 text-sm text-md-error">
           {errors.form}
         </div>
       )}
 
       {/* Title */}
       <div>
-        <label className="mb-1 block text-sm font-medium">Title *</label>
+        <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">Title *</label>
         <input
           name="title"
           required
@@ -91,31 +91,31 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
           placeholder="e.g. Write a Python web scraper for product prices"
         />
         {errors.title && (
-          <p className="mt-1 text-xs text-red-600">{errors.title}</p>
+          <p className="mt-1 text-xs text-md-error">{errors.title}</p>
         )}
       </div>
 
       {/* Description */}
       <div>
-        <label className="mb-1 block text-sm font-medium">Description *</label>
+        <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">Description *</label>
         <textarea
           name="description"
           required
           minLength={20}
           maxLength={5000}
           rows={5}
-          className={inputClass}
+          className="w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 py-3 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
           placeholder="Describe exactly what you need done, including requirements and expected output..."
         />
         {errors.description && (
-          <p className="mt-1 text-xs text-red-600">{errors.description}</p>
+          <p className="mt-1 text-xs text-md-error">{errors.description}</p>
         )}
       </div>
 
       {/* Budget + Category row */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">
             Budget (credits) *
           </label>
           <input
@@ -127,12 +127,12 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
             placeholder="Min 10"
           />
           {errors.budgetCredits && (
-            <p className="mt-1 text-xs text-red-600">{errors.budgetCredits}</p>
+            <p className="mt-1 text-xs text-md-error">{errors.budgetCredits}</p>
           )}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Category</label>
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">Category</label>
           <select
             name="categoryId"
             className={inputClass}
@@ -150,19 +150,19 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
       {/* Deadline + Max Revisions row */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium">Deadline</label>
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">Deadline</label>
           <input
             name="deadline"
             type="datetime-local"
             className={inputClass}
           />
           {errors.deadline && (
-            <p className="mt-1 text-xs text-red-600">{errors.deadline}</p>
+            <p className="mt-1 text-xs text-md-error">{errors.deadline}</p>
           )}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">
             Max Revisions
           </label>
           <input
@@ -174,7 +174,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
             className={inputClass}
           />
           {errors.maxRevisions && (
-            <p className="mt-1 text-xs text-red-600">{errors.maxRevisions}</p>
+            <p className="mt-1 text-xs text-md-error">{errors.maxRevisions}</p>
           )}
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function CreateTaskForm({ categories }: CreateTaskFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+        className="w-full rounded-full bg-md-primary py-3 text-sm font-medium text-md-on-primary shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 hover:shadow-md active:scale-95 disabled:opacity-50"
       >
         {loading ? "Creating..." : "Create Task"}
       </button>

@@ -64,7 +64,7 @@ export default function DeliverableActions({
         <button
           onClick={handleAccept}
           disabled={loading}
-          className="rounded bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
+          className="rounded-full bg-md-success px-3 py-1.5 text-xs font-medium text-white transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-success/90 active:scale-95 disabled:opacity-50"
         >
           Accept Deliverable
         </button>
@@ -73,7 +73,7 @@ export default function DeliverableActions({
           <button
             onClick={() => setShowRevisionForm(!showRevisionForm)}
             disabled={loading}
-            className="rounded bg-orange-100 px-3 py-1.5 text-xs font-medium text-orange-700 transition hover:bg-orange-200 disabled:opacity-50"
+            className="rounded-full bg-md-tertiary-container px-3 py-1.5 text-xs font-medium text-md-tertiary transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-tertiary/10 active:scale-95 disabled:opacity-50"
           >
             Request Revision
           </button>
@@ -83,7 +83,7 @@ export default function DeliverableActions({
           <button
             onClick={handleReject}
             disabled={loading}
-            className="rounded bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-200 disabled:opacity-50"
+            className="rounded-full bg-md-error-container px-3 py-1.5 text-xs font-medium text-md-error transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-error/10 active:scale-95 disabled:opacity-50"
           >
             Reject (Final)
           </button>
@@ -97,12 +97,12 @@ export default function DeliverableActions({
             onChange={(e) => setRevisionNotes(e.target.value)}
             placeholder="Describe what changes you need..."
             rows={3}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className="w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 py-3 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
           />
           <button
             onClick={handleRevision}
             disabled={loading || !revisionNotes.trim()}
-            className="rounded bg-orange-600 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-orange-700 disabled:opacity-50"
+            className="rounded-full bg-md-tertiary px-4 py-1.5 text-xs font-medium text-white transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-tertiary/90 active:scale-95 disabled:opacity-50"
           >
             Submit Revision Request
           </button>

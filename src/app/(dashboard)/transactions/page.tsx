@@ -15,36 +15,36 @@ export default async function TransactionsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-bold">Transaction History</h1>
+      <h1 className="mb-6 text-xl font-medium text-md-fg">Transaction History</h1>
 
       {transactions.length === 0 ? (
-        <p className="text-sm text-gray-500">No transactions yet.</p>
+        <p className="text-sm text-md-on-surface-variant">No transactions yet.</p>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-3xl bg-md-surface-container shadow-sm">
           {transactions.map((tx) => (
             <div
               key={tx.id}
-              className="flex items-center justify-between border-b border-gray-100 px-4 py-3 last:border-0"
+              className="flex items-center justify-between border-b border-md-outline-variant/20 px-5 py-4 last:border-0"
             >
               <div>
-                <p className="text-sm font-medium capitalize">{tx.type}</p>
+                <p className="text-sm font-medium capitalize text-md-fg">{tx.type}</p>
                 {tx.description && (
-                  <p className="text-xs text-gray-500">{tx.description}</p>
+                  <p className="text-xs text-md-on-surface-variant">{tx.description}</p>
                 )}
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-md-on-surface-variant/70">
                   {new Date(tx.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <div className="text-right">
                 <p
                   className={`font-medium ${
-                    tx.amount > 0 ? "text-green-600" : "text-red-600"
+                    tx.amount > 0 ? "text-md-success" : "text-md-error"
                   }`}
                 >
                   {tx.amount > 0 ? "+" : ""}
                   {tx.amount} credits
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-md-on-surface-variant/70">
                   Balance: {tx.balanceAfter}
                 </p>
               </div>
