@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface GitHubDeliveryProps {
@@ -28,7 +28,7 @@ function StatusDot({ status }: { status: string }) {
 function StatusLabel({ status }: { status: string }) {
   const labels: Record<string, string> = {
     pending: "Pending",
-    deploying: "Deploying",
+    deploying: "Deploying...",
     ready: "Live",
     error: "Failed",
   };
@@ -39,14 +39,41 @@ export default function GitHubDeliveryCard({
   taskId,
   sourceRepoUrl,
   sourceBranch,
-  previewUrl,
-  deployStatus,
-  errorMessage,
+  previewUrl: initialPreviewUrl,
+  deployStatus: initialStatus,
+  errorMessage: initialError,
   isWorker,
 }: GitHubDeliveryProps) {
   const router = useRouter();
+  const [status, setStatus] = useState(initialStatus);
+  const [previewUrl, setPreviewUrl] = useState(initialPreviewUrl);
+  const [errorMsg, setErrorMsg] = useState(initialError);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  const pollStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/deploy-status`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setStatus(data.deployStatus);
+      if (data.previewUrl) setPreviewUrl(data.previewUrl);
+      if (data.errorMessage) setErrorMsg(data.errorMessage);
+      // Refresh server components when deployment finishes
+      if (data.deployStatus === "ready" || data.deployStatus === "error") {
+        router.refresh();
+      }
+    } catch {
+      // silent fail — will retry on next interval
+    }
+  }, [taskId, router]);
+
+  // Auto-poll every 5s while deploying
+  useEffect(() => {
+    if (status !== "deploying" && status !== "pending") return;
+    const interval = setInterval(pollStatus, 5000);
+    return () => clearInterval(interval);
+  }, [status, pollStatus]);
 
   async function handleSync() {
     setSyncing(true);
@@ -55,6 +82,8 @@ export default function GitHubDeliveryCard({
       const res = await fetch(`/api/tasks/${taskId}/sync-github`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
+        setStatus("deploying");
+        setErrorMsg(null);
         router.refresh();
       } else {
         setSyncError(data.error || "Sync failed");
@@ -87,12 +116,12 @@ export default function GitHubDeliveryCard({
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          <StatusDot status={deployStatus} />
-          <StatusLabel status={deployStatus} />
+          <StatusDot status={status} />
+          <StatusLabel status={status} />
         </div>
       </div>
 
-      {previewUrl && deployStatus !== "error" && (
+      {previewUrl && status !== "error" && (
         <div className="mb-2">
           <a
             href={previewUrl}
@@ -105,7 +134,7 @@ export default function GitHubDeliveryCard({
         </div>
       )}
 
-      {previewUrl && deployStatus === "ready" && (
+      {previewUrl && status === "ready" && (
         <div className="mb-2 overflow-hidden rounded border border-gray-200">
           <iframe
             src={previewUrl}
@@ -116,13 +145,13 @@ export default function GitHubDeliveryCard({
         </div>
       )}
 
-      {errorMessage && deployStatus === "error" && (
+      {errorMsg && status === "error" && (
         <div className="mb-2 rounded bg-red-50 p-2">
-          <p className="text-xs text-red-600">{errorMessage}</p>
+          <p className="text-xs text-red-600">{errorMsg}</p>
         </div>
       )}
 
-      {isWorker && deployStatus !== "deploying" && (
+      {isWorker && status !== "deploying" && status !== "pending" && (
         <div className="mt-2">
           <button
             onClick={handleSync}
