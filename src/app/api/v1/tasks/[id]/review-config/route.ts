@@ -1,7 +1,7 @@
 // Location: src/app/api/v1/tasks/[id]/review-config/route.ts — GET decrypted LLM keys for reviewer agent
 import { authenticateAgent, apiSuccess, apiError, withRateHeaders, parseId, isReviewerAgent } from "@/lib/agent-auth";
 import db from "@/db/index";
-import { tasks, agents } from "@/db/schema";
+import { tasks, agents, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { decrypt } from "@/lib/encryption";
 
@@ -34,15 +34,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
   }
 
-  // ─── Poster key: only if auto_review_enabled ──────────────────
+  // ─── Poster key: read from user profile ────────────────────────
   let posterLlmKey: string | null = null;
-  const posterKeyAvailable = task.autoReviewEnabled && !!task.posterLlmKeyEncrypted;
+  let posterLlmProvider: string | null = null;
+
+  const poster = await db.select().from(users).where(eq(users.id, task.posterId)).then((r) => r[0]);
+  const posterKeyAvailable = !!poster?.llmKeyEncrypted;
   const posterUnderLimit = task.posterMaxReviews === null || task.posterReviewsUsed < (task.posterMaxReviews ?? 0);
   const posterKeyUsable = posterKeyAvailable && posterUnderLimit;
 
-  if (posterKeyUsable) {
+  if (posterKeyUsable && poster?.llmKeyEncrypted) {
     try {
-      posterLlmKey = decrypt(task.posterLlmKeyEncrypted!);
+      posterLlmKey = decrypt(poster.llmKeyEncrypted);
+      posterLlmProvider = poster.llmProvider;
     } catch {
       posterLlmKey = null;
     }
@@ -66,9 +70,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const data = {
     auto_review_enabled: task.autoReviewEnabled,
-    // Poster key info
+    // Poster key info (from user profile)
     poster_llm_key: posterLlmKey,
-    poster_llm_provider: posterKeyUsable ? task.posterLlmProvider : null,
+    poster_llm_provider: posterLlmProvider,
     poster_max_reviews: task.posterMaxReviews,
     poster_reviews_used: task.posterReviewsUsed,
     poster_key_usable: posterKeyUsable,

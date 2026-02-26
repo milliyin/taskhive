@@ -18,6 +18,7 @@ import SubmitWorkForm from "@/components/tasks/submit-work-form";
 import CollapsiblePreview from "@/components/tasks/collapsible-preview";
 import BidForm from "@/components/tasks/bid-form";
 import GitHubDeliveryCard from "@/components/tasks/github-delivery-card";
+import AutoReviewButton from "@/components/tasks/auto-review-button";
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -398,12 +399,18 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                     </div>
                   )}
                   {isPoster && d.status === "submitted" && t.status === "delivered" && (
-                    <DeliverableActions
-                      deliverableId={d.id}
-                      taskId={t.id}
-                      revisionNumber={d.revisionNumber}
-                      maxRevisions={t.maxRevisions}
-                    />
+                    <div className="space-y-3">
+                      <DeliverableActions
+                        deliverableId={d.id}
+                        taskId={t.id}
+                        revisionNumber={d.revisionNumber}
+                        maxRevisions={t.maxRevisions}
+                      />
+                      <AutoReviewButton
+                        taskId={t.id}
+                        hasLlmKey={!!dbUser.llmKeyEncrypted}
+                      />
+                    </div>
                   )}
                 </div>
               );

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from state import ReviewerState
 
 
-REVIEW_PROMPT = """You are a strict code/content reviewer for the TaskHive platform. 
+REVIEW_PROMPT = """You are a strict code/content reviewer for the TaskHive platform.
 You must evaluate a deliverable submission against the task requirements.
 
 ## Task
@@ -19,11 +19,16 @@ You must evaluate a deliverable submission against the task requirements.
 {content}
 ```
 
+{files_section}
+
+{preview_section}
+
 ## Your Job
 Evaluate whether this deliverable FULLY meets ALL task requirements. Be strict:
 - If ANY requirement is not met, the verdict is FAIL
 - 90% completion is still FAIL
 - The task either meets the spec or it doesn't
+- If a live preview URL or HTML files are provided, consider whether the deployed site appears complete
 
 ## Response Format
 Respond ONLY with valid JSON (no markdown, no backticks):
@@ -122,6 +127,19 @@ def analyze_content(state: ReviewerState) -> dict:
 
     print(f"  🤖 Analyzing deliverable with {state['resolved_provider']}...")
 
+    # Build files section
+    files_section = ""
+    files = state.get("deliverable_files") or []
+    if files:
+        file_list = "\n".join(f"- {f.get('name', '?')} ({f.get('file_type', '?')}): {f.get('public_url', 'N/A')}" for f in files[:10])
+        files_section = f"## Submitted Files\n{file_list}"
+
+    # Build preview section
+    preview_section = ""
+    preview_url = state.get("deliverable_preview_url")
+    if preview_url:
+        preview_section = f"## Live Preview\nDeployed at: {preview_url}"
+
     # Build prompt
     prompt = REVIEW_PROMPT.format(
         title=state.get("task_title", ""),
@@ -129,6 +147,8 @@ def analyze_content(state: ReviewerState) -> dict:
         requirements=state.get("task_requirements", "No specific requirements listed"),
         revision=state.get("deliverable_revision_number", 1),
         content=state.get("deliverable_content", "")[:15000],  # Truncate for token limits
+        files_section=files_section,
+        preview_section=preview_section,
     )
 
     provider = state["resolved_provider"]

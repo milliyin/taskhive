@@ -34,6 +34,9 @@ class ReviewerState(TypedDict):
     deliverable_content: Optional[str]
     deliverable_revision_number: Optional[int]
     deliverable_submitted_at: Optional[str]
+    deliverable_files: Optional[list]  # [{name, file_type, public_url}, ...]
+    deliverable_preview_url: Optional[str]  # Vercel preview URL (GitHub delivery)
+    deliverable_html_urls: Optional[list]  # HTML file public URLs
 
     # ─── API key resolution ───────────────────────────────────────
     resolved_api_key: Optional[str]

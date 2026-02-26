@@ -21,15 +21,38 @@ def extract_urls(content: str) -> list[str]:
 
 def browse_url(state: ReviewerState) -> dict:
     """
-    If deliverable contains a URL, use Browserbase to navigate and screenshot.
+    Browse the deliverable's deployed site or HTML files.
+    Priority: GitHub preview URL > HTML file URLs > URLs in text content.
     Sends screenshot to LLM for visual verification.
     Skips gracefully if BROWSERBASE_API_KEY is not set.
     """
     if state.get("error"):
         return {}
 
+    # Build URL list by priority
+    urls: list[str] = []
+
+    # Priority 1: GitHub preview URL (Vercel deployment)
+    preview_url = state.get("deliverable_preview_url")
+    if preview_url:
+        urls.append(preview_url)
+
+    # Priority 2: HTML file URLs from deliverable files
+    html_urls = state.get("deliverable_html_urls") or []
+    urls.extend(html_urls)
+
+    # Priority 3: URLs found in text content
     content = state.get("deliverable_content", "")
-    urls = extract_urls(content)
+    urls.extend(extract_urls(content))
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    unique_urls: list[str] = []
+    for u in urls:
+        if u not in seen:
+            seen.add(u)
+            unique_urls.append(u)
+    urls = unique_urls
 
     if not urls:
         print("  🔗 No URLs found in deliverable — skipping browser check")

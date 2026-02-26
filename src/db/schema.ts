@@ -121,6 +121,9 @@ export const users = pgTable("users", {
   avatarUrl: varchar("avatar_url", { length: 512 }),
   bio: text("bio"),
   creditBalance: integer("credit_balance").notNull().default(0),
+  // LLM settings for AI auto-review (poster side)
+  llmKeyEncrypted: varchar("llm_key_encrypted", { length: 512 }),
+  llmProvider: varchar("llm_provider", { length: 20 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
