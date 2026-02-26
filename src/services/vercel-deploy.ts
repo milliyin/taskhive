@@ -22,6 +22,35 @@ export interface DeploymentResult {
   readyState: string;
 }
 
+// Cache: only disable protection once per process lifetime
+let protectionDisabled = false;
+
+/** Ensure the preview project has deployment protection turned off so anyone can view previews */
+async function ensurePublicPreviews(): Promise<void> {
+  if (protectionDisabled) return;
+  try {
+    // Find project by name
+    const res = await fetch(`${VERCEL_API}/v9/projects/${PROJECT_NAME}`, {
+      headers: headers(),
+    });
+    if (!res.ok) return;
+    const project = await res.json();
+
+    // Disable Vercel Authentication on all deployments
+    await fetch(`${VERCEL_API}/v9/projects/${project.id}`, {
+      method: "PATCH",
+      headers: headers(),
+      body: JSON.stringify({
+        vercelAuthentication: { deploymentType: "none" },
+        passwordProtection: null,
+      }),
+    });
+    protectionDisabled = true;
+  } catch {
+    // Best-effort — don't block deployment if this fails
+  }
+}
+
 /** Create a deployment from a public GitHub repo using Vercel's gitSource */
 export async function createGitDeployment(
   owner: string,
@@ -29,6 +58,9 @@ export async function createGitDeployment(
   ref: string,
   envVars?: Record<string, string>
 ): Promise<DeploymentResult> {
+  // Ensure previews are publicly accessible
+  await ensurePublicPreviews();
+
   const body: Record<string, unknown> = {
     name: PROJECT_NAME,
     gitSource: {
