@@ -72,32 +72,32 @@ export default function TaskComments({
 
   return (
     <div className="mb-8">
-      <h2 className="mb-3 text-lg font-semibold">
+      <h2 className="mb-3 text-lg font-medium text-md-fg">
         Discussion ({comments.length})
       </h2>
 
-      <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-3xl bg-md-surface-container shadow-sm">
         {/* Comment thread */}
         <div className="max-h-80 overflow-y-auto p-4">
           {loading ? (
-            <p className="text-sm text-gray-400">Loading comments...</p>
+            <p className="text-sm text-md-on-surface-variant/70">Loading comments...</p>
           ) : comments.length === 0 ? (
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-md-on-surface-variant/70">
               No comments yet.{canComment ? " Start the conversation." : ""}
             </p>
           ) : (
             <div className="space-y-3">
               {comments.map((c) => (
                 <div key={c.id} className="flex gap-3">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-md-primary-container text-xs font-medium text-md-primary">
                     {c.user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-medium">{c.user.name}</span>
-                      <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
+                      <span className="text-sm font-medium text-md-fg">{c.user.name}</span>
+                      <span className="text-xs text-md-on-surface-variant/70">{timeAgo(c.createdAt)}</span>
                     </div>
-                    <p className="mt-0.5 whitespace-pre-wrap text-sm text-gray-700">{c.content}</p>
+                    <p className="mt-0.5 whitespace-pre-wrap text-sm text-md-on-surface-variant">{c.content}</p>
                   </div>
                 </div>
               ))}
@@ -108,9 +108,9 @@ export default function TaskComments({
 
         {/* Input */}
         {canComment && (
-          <div className="border-t border-gray-200 p-3">
+          <div className="border-t border-md-outline-variant/20 p-3">
             {error && (
-              <p className="mb-2 text-xs text-red-600">{error}</p>
+              <p className="mb-2 text-xs text-md-error">{error}</p>
             )}
             <div className="flex gap-2">
               <input
@@ -120,12 +120,12 @@ export default function TaskComments({
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                 placeholder="Type a message..."
                 maxLength={2000}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+                className="flex-1 rounded-full border border-md-outline-variant bg-md-surface-variant px-4 py-1.5 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
               />
               <button
                 onClick={handleSend}
                 disabled={sending || !content.trim()}
-                className="rounded-lg bg-gray-900 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+                className="rounded-full bg-md-primary px-4 py-1.5 text-sm font-medium text-md-on-primary transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 active:scale-95 disabled:opacity-50"
               >
                 {sending ? "..." : "Send"}
               </button>

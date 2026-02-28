@@ -48,44 +48,44 @@ export default function SubmitGitHubForm({ taskId }: { taskId: number }) {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4">
+    <div className="rounded-3xl bg-md-surface-container p-5 shadow-sm">
       <div className="space-y-3">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            GitHub Repository URL <span className="text-red-500">*</span>
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">
+            GitHub Repository URL <span className="text-md-error">*</span>
           </label>
           <input
             type="url"
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             placeholder="https://github.com/owner/repo"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className="h-12 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Branch <span className="text-xs text-gray-400">(optional, defaults to main)</span>
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">
+            Branch <span className="text-xs text-md-on-surface-variant/50">(optional, defaults to main)</span>
           </label>
           <input
             type="text"
             value={branch}
             onChange={(e) => setBranch(e.target.value)}
             placeholder="main"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className="h-12 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Environment File <span className="text-xs text-gray-400">(optional .env)</span>
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">
+            Environment File <span className="text-xs text-md-on-surface-variant/50">(optional .env)</span>
           </label>
           {envFile ? (
-            <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-1.5">
-              <span className="text-sm">{envFile.name}</span>
+            <div className="flex items-center justify-between rounded-xl bg-md-surface-variant px-3 py-1.5">
+              <span className="text-sm text-md-fg">{envFile.name}</span>
               <button
                 onClick={() => { setEnvFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                className="text-xs text-red-500 hover:text-red-700"
+                className="text-xs text-md-error hover:text-md-error/80"
               >
                 Remove
               </button>
@@ -93,7 +93,7 @@ export default function SubmitGitHubForm({ taskId }: { taskId: number }) {
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-50"
+              className="rounded-full border border-md-border px-3 py-1.5 text-sm text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10 active:scale-95"
             >
               Upload .env file
             </button>
@@ -112,17 +112,17 @@ export default function SubmitGitHubForm({ taskId }: { taskId: number }) {
         <button
           onClick={handleSubmit}
           disabled={submitting || !repoUrl.trim()}
-          className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
+          className="rounded-full bg-md-success px-5 py-2 text-sm font-medium text-white shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-success/90 hover:shadow-md active:scale-95 disabled:opacity-50"
         >
           {submitting ? "Deploying..." : "Deploy Preview"}
         </button>
       </div>
 
       {error && (
-        <p className="mt-2 rounded bg-red-50 p-2 text-xs text-red-600">{error}</p>
+        <p className="mt-2 rounded-xl bg-md-error-container p-2 text-xs text-md-error">{error}</p>
       )}
 
-      <p className="mt-2 text-xs text-gray-400">
+      <p className="mt-2 text-xs text-md-on-surface-variant/70">
         Public GitHub repos only. Vercel will clone and build the repo directly.
       </p>
     </div>

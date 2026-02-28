@@ -111,10 +111,10 @@ export default function FileUpload({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+          className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors duration-200 ${
             dragging
-              ? "border-blue-400 bg-blue-50"
-              : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
+              ? "border-md-primary bg-md-primary-container/30"
+              : "border-md-outline-variant bg-md-surface-variant hover:border-md-primary/50 hover:bg-md-primary/5"
           }`}
         >
           <input
@@ -125,32 +125,32 @@ export default function FileUpload({
             className="hidden"
             accept=".html,.css,.js,.ts,.jsx,.tsx,.json,.txt,.md,.png,.jpg,.jpeg,.gif,.svg,.webp,.pdf,.zip"
           />
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-md-on-surface-variant">
             {uploading ? (
               "Uploading..."
             ) : (
               <>
-                <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+                <span className="font-medium text-md-primary">Click to upload</span> or drag and drop
               </>
             )}
           </p>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-md-on-surface-variant/70">
             Up to {remaining} file(s) · Max 5MB each · HTML, CSS, JS, images, PDF, ZIP, text
           </p>
         </div>
       )}
 
       {error && (
-        <p className="rounded bg-red-50 p-2 text-xs text-red-600">{error}</p>
+        <p className="rounded-xl bg-md-error-container p-2 text-xs text-md-error">{error}</p>
       )}
 
       {uploaded.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs font-medium text-gray-500">Just uploaded:</p>
+          <p className="text-xs font-medium text-md-on-surface-variant">Just uploaded:</p>
           {uploaded.map((f) => (
-            <div key={f.id} className="flex items-center justify-between rounded border border-green-200 bg-green-50 px-3 py-2">
-              <span className="text-sm">{f.name}</span>
-              <span className="text-xs text-gray-500">{formatBytes(f.size_bytes)}</span>
+            <div key={f.id} className="flex items-center justify-between rounded-xl bg-md-success-container px-3 py-2">
+              <span className="text-sm text-md-success">{f.name}</span>
+              <span className="text-xs text-md-on-surface-variant">{formatBytes(f.size_bytes)}</span>
             </div>
           ))}
         </div>

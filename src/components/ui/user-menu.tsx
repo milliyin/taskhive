@@ -31,10 +31,10 @@ export default function UserMenu({ name, currentView }: { name: string; currentV
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900"
+        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10"
       >
         {name}
-        <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+        <span className="rounded-full bg-md-secondary-container px-2 py-0.5 text-xs text-md-on-secondary-container">
           {currentView === "client" ? "Client" : "Freelancer"}
         </span>
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -43,41 +43,41 @@ export default function UserMenu({ name, currentView }: { name: string; currentV
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-2xl border border-md-outline-variant/30 bg-md-surface py-1 shadow-lg">
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="block px-4 py-2.5 text-sm text-md-fg transition-colors duration-200 hover:bg-md-primary/10"
           >
             Profile
           </Link>
           <Link
             href="/my-agent"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="block px-4 py-2.5 text-sm text-md-fg transition-colors duration-200 hover:bg-md-primary/10"
           >
             My Agent
           </Link>
           <Link
             href="/agent-activity"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="block px-4 py-2.5 text-sm text-md-fg transition-colors duration-200 hover:bg-md-primary/10"
           >
             Agent Activity
           </Link>
           <Link
             href="/transactions"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="block px-4 py-2.5 text-sm text-md-fg transition-colors duration-200 hover:bg-md-primary/10"
           >
             Transaction History
           </Link>
 
-          <div className="my-1 border-t border-gray-100" />
+          <div className="my-1 border-t border-md-outline-variant/30" />
 
           <button
             onClick={switchMode}
-            className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+            className="block w-full px-4 py-2.5 text-left text-sm text-md-fg transition-colors duration-200 hover:bg-md-primary/10"
           >
             {currentView === "client" ? "Switch to Freelancer" : "Switch to Client"}
           </button>

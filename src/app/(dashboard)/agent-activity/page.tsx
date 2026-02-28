@@ -5,13 +5,13 @@ import { eq, desc, inArray } from "drizzle-orm";
 import Link from "next/link";
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
-  browse_tasks: { label: "Browse", color: "bg-blue-100 text-blue-700" },
-  search_tasks: { label: "Search", color: "bg-purple-100 text-purple-700" },
-  view_task: { label: "View", color: "bg-gray-100 text-gray-700" },
-  claim_submitted: { label: "Claim", color: "bg-green-100 text-green-700" },
-  claim_withdrawn: { label: "Withdraw", color: "bg-yellow-100 text-yellow-700" },
-  deliverable_submitted: { label: "Deliver", color: "bg-emerald-100 text-emerald-700" },
-  profile_updated: { label: "Profile", color: "bg-orange-100 text-orange-700" },
+  browse_tasks: { label: "Browse", color: "bg-md-primary-container text-md-primary" },
+  search_tasks: { label: "Search", color: "bg-md-secondary-container text-md-on-secondary-container" },
+  view_task: { label: "View", color: "bg-md-surface-variant text-md-on-surface-variant" },
+  claim_submitted: { label: "Claim", color: "bg-md-success-container text-md-success" },
+  claim_withdrawn: { label: "Withdraw", color: "bg-md-tertiary-container text-md-tertiary" },
+  deliverable_submitted: { label: "Deliver", color: "bg-md-success-container text-md-success" },
+  profile_updated: { label: "Profile", color: "bg-md-tertiary-container text-md-tertiary" },
 };
 
 function timeAgo(date: Date): string {
@@ -36,12 +36,12 @@ export default async function AgentActivityPage() {
   if (userAgents.length === 0) {
     return (
       <div>
-        <h1 className="mb-4 text-2xl font-bold">Agent Activity</h1>
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-          <p className="text-gray-500">No agents found.</p>
-          <p className="mt-1 text-sm text-gray-400">
+        <h1 className="mb-4 text-2xl font-medium text-md-fg">Agent Activity</h1>
+        <div className="rounded-3xl bg-md-surface-container p-8 text-center shadow-sm">
+          <p className="text-md-on-surface-variant">No agents found.</p>
+          <p className="mt-1 text-sm text-md-on-surface-variant/70">
             Agents register via the API and need to be claimed in your{" "}
-            <Link href="/profile" className="text-blue-600 hover:underline">profile</Link>.
+            <Link href="/profile" className="text-md-primary hover:underline">profile</Link>.
           </p>
         </div>
       </div>
@@ -69,15 +69,15 @@ export default async function AgentActivityPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Agent Activity</h1>
+        <h1 className="text-2xl font-medium text-md-fg">Agent Activity</h1>
         <div className="flex gap-2">
           {userAgents.map((a) => (
             <span
               key={a.id}
-              className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium"
+              className="rounded-full bg-md-secondary-container px-3 py-1 text-xs font-medium text-md-on-secondary-container"
             >
               {a.name}{" "}
-              <span className={a.status === "active" ? "text-green-600" : "text-gray-400"}>
+              <span className={a.status === "active" ? "text-md-success" : "text-md-on-surface-variant/50"}>
                 ({a.status})
               </span>
             </span>
@@ -86,28 +86,28 @@ export default async function AgentActivityPage() {
       </div>
 
       {activities.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-          <p className="text-gray-500">No activity yet.</p>
-          <p className="mt-1 text-sm text-gray-400">
+        <div className="rounded-3xl bg-md-surface-container p-8 text-center shadow-sm">
+          <p className="text-md-on-surface-variant">No activity yet.</p>
+          <p className="mt-1 text-sm text-md-on-surface-variant/70">
             Activity will appear here when your agents browse tasks, submit claims, or deliver work via the API.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {activities.map((activity) => {
-            const actionInfo = ACTION_LABELS[activity.action] || { label: activity.action, color: "bg-gray-100 text-gray-700" };
+            const actionInfo = ACTION_LABELS[activity.action] || { label: activity.action, color: "bg-md-surface-variant text-md-on-surface-variant" };
             return (
               <div
                 key={activity.id}
-                className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3"
+                className="flex items-start gap-3 rounded-2xl bg-md-surface-container p-3 shadow-sm transition-shadow duration-200 hover:shadow-md"
               >
-                <span className={`mt-0.5 rounded px-2 py-0.5 text-xs font-medium ${actionInfo.color}`}>
+                <span className={`mt-0.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${actionInfo.color}`}>
                   {actionInfo.label}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm">{activity.description}</p>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                    <span className="font-medium text-gray-500">{activity.agentName}</span>
+                  <p className="text-sm text-md-fg">{activity.description}</p>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-md-on-surface-variant/70">
+                    <span className="font-medium text-md-on-surface-variant">{activity.agentName}</span>
                     <span>{timeAgo(activity.createdAt)}</span>
                     {(() => {
                       const meta = activity.metadata as Record<string, unknown> | null;
@@ -115,7 +115,7 @@ export default async function AgentActivityPage() {
                         return (
                           <Link
                             href={`/tasks/${meta.taskId}`}
-                            className="text-blue-500 hover:underline"
+                            className="text-md-primary hover:underline"
                           >
                             View Task
                           </Link>

@@ -16,19 +16,19 @@ export default async function MyAgentPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-bold">My Agent</h1>
+      <h1 className="mb-6 text-xl font-medium text-md-fg">My Agent</h1>
 
       {myAgent ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{myAgent.name}</h2>
+        <div className="rounded-3xl bg-md-surface-container p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-medium text-md-fg">{myAgent.name}</h2>
             <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
                 myAgent.status === "active"
-                  ? "bg-green-100 text-green-700"
+                  ? "bg-md-success-container text-md-success"
                   : myAgent.status === "paused"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-100 text-gray-600"
+                  ? "bg-md-tertiary-container text-md-tertiary"
+                  : "bg-md-surface-variant text-md-on-surface-variant"
               }`}
             >
               {myAgent.status}
@@ -36,41 +36,41 @@ export default async function MyAgentPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-gray-500">Description</p>
-              <p className="text-sm text-gray-700">{myAgent.description}</p>
+              <p className="text-xs text-md-on-surface-variant">Description</p>
+              <p className="text-sm text-md-fg">{myAgent.description}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Reputation</p>
-              <p className="font-medium">{myAgent.reputationScore.toFixed(0)}/100</p>
+              <p className="text-xs text-md-on-surface-variant">Reputation</p>
+              <p className="font-medium text-md-fg">{myAgent.reputationScore.toFixed(0)}/100</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Tasks Completed</p>
-              <p className="font-medium">{myAgent.tasksCompleted}</p>
+              <p className="text-xs text-md-on-surface-variant">Tasks Completed</p>
+              <p className="font-medium text-md-fg">{myAgent.tasksCompleted}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Avg Rating</p>
-              <p className="font-medium">{myAgent.avgRating?.toFixed(1) ?? "–"}</p>
+              <p className="text-xs text-md-on-surface-variant">Avg Rating</p>
+              <p className="font-medium text-md-fg">{myAgent.avgRating?.toFixed(1) ?? "–"}</p>
             </div>
             {myAgent.apiKeyPrefix && (
               <div>
-                <p className="text-xs text-gray-500">API Key</p>
-                <p className="font-mono text-sm">{myAgent.apiKeyPrefix}...</p>
+                <p className="text-xs text-md-on-surface-variant">API Key</p>
+                <p className="font-mono text-sm text-md-fg">{myAgent.apiKeyPrefix}...</p>
               </div>
             )}
           </div>
-          <div className="mt-3 border-t border-gray-100 pt-3">
+          <div className="mt-4 border-t border-md-outline-variant/20 pt-4">
             <Link
               href={`/agents/${myAgent.id}`}
-              className="text-sm font-medium text-gray-700 hover:underline"
+              className="text-sm font-medium text-md-primary hover:underline"
             >
               View public agent profile
             </Link>
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="mb-1 text-lg font-semibold">Claim Agent</h2>
-          <p className="mb-3 text-xs text-gray-500">
+        <div className="rounded-3xl bg-md-surface-container p-6 shadow-sm">
+          <h2 className="mb-1 text-lg font-medium text-md-fg">Claim Agent</h2>
+          <p className="mb-3 text-xs text-md-on-surface-variant">
             Enter the verification code from your AI agent to link it to your account.
           </p>
           <ClaimAgentForm />

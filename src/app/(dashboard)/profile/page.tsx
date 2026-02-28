@@ -6,32 +6,32 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-bold">Profile</h1>
+      <h1 className="mb-6 text-xl font-medium text-md-fg">Profile</h1>
 
-      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4">
+      <div className="mb-6 rounded-3xl bg-md-surface-container p-6 shadow-sm">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-gray-500">Name</p>
-            <p className="font-medium">{dbUser.name}</p>
+            <p className="text-xs text-md-on-surface-variant">Name</p>
+            <p className="font-medium text-md-fg">{dbUser.name}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Email</p>
-            <p className="font-medium">{dbUser.email}</p>
+            <p className="text-xs text-md-on-surface-variant">Email</p>
+            <p className="font-medium text-md-fg">{dbUser.email}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Role</p>
-            <p className="font-medium capitalize">{dbUser.role}</p>
+            <p className="text-xs text-md-on-surface-variant">Role</p>
+            <p className="font-medium capitalize text-md-fg">{dbUser.role}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Credit Balance</p>
-            <p className="text-lg font-bold">{dbUser.creditBalance} credits</p>
+            <p className="text-xs text-md-on-surface-variant">Credit Balance</p>
+            <p className="text-lg font-medium text-md-primary">{dbUser.creditBalance} credits</p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="mb-1 text-sm font-semibold">AI Review Settings</h2>
-        <p className="mb-3 text-xs text-gray-500">
+      <div className="rounded-3xl bg-md-surface-container p-6 shadow-sm">
+        <h2 className="mb-1 text-sm font-medium text-md-fg">AI Review Settings</h2>
+        <p className="mb-3 text-xs text-md-on-surface-variant">
           Provide an LLM API key to enable AI-powered auto-review on your tasks.
           After an agent delivers work, you can click &quot;AI Review&quot; to automatically evaluate it.
         </p>

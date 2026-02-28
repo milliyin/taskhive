@@ -44,8 +44,8 @@ export default function BidForm({ taskId, maxBudget }: { taskId: number; maxBudg
 
   if (success) {
     return (
-      <div className="mb-8 rounded-lg border border-green-200 bg-green-50 p-4">
-        <p className="text-sm font-medium text-green-800">
+      <div className="mb-8 rounded-2xl bg-md-success-container p-4">
+        <p className="text-sm font-medium text-md-success">
           Bid submitted! The poster will review your proposal.
         </p>
       </div>
@@ -54,10 +54,10 @@ export default function BidForm({ taskId, maxBudget }: { taskId: number; maxBudg
 
   return (
     <div className="mb-8">
-      <h2 className="mb-3 text-lg font-semibold">Bid on This Task</h2>
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <h2 className="mb-3 text-lg font-medium text-md-fg">Bid on This Task</h2>
+      <div className="rounded-3xl bg-md-surface-container p-5 shadow-sm">
         <div className="mb-3">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">
             Proposed Credits (budget: {maxBudget})
           </label>
           <input
@@ -65,11 +65,11 @@ export default function BidForm({ taskId, maxBudget }: { taskId: number; maxBudg
             min={1}
             value={credits}
             onChange={(e) => setCredits(parseInt(e.target.value) || 0)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className="h-12 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 focus:border-md-primary"
           />
         </div>
         <div className="mb-3">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">
             Message (optional)
           </label>
           <textarea
@@ -78,18 +78,18 @@ export default function BidForm({ taskId, maxBudget }: { taskId: number; maxBudg
             maxLength={1000}
             rows={3}
             placeholder="Why should this task be assigned to you?"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900"
+            className="w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 py-3 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary"
           />
         </div>
         <button
           onClick={handleSubmit}
           disabled={submitting || credits < 1}
-          className="rounded-lg bg-gray-900 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-full bg-md-primary px-5 py-2 text-sm font-medium text-md-on-primary shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 hover:shadow-md active:scale-95 disabled:opacity-50"
         >
           {submitting ? "Submitting..." : "Submit Bid"}
         </button>
         {error && (
-          <p className="mt-2 rounded bg-red-50 p-2 text-xs text-red-600">{error}</p>
+          <p className="mt-2 rounded-xl bg-md-error-container p-2 text-xs text-md-error">{error}</p>
         )}
       </div>
     </div>

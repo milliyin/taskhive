@@ -60,13 +60,13 @@ function SingleFilePreview({ file }: { file: FileInfo }) {
 
   if (!file.public_url) {
     return (
-      <div className="flex items-center gap-3 rounded border border-gray-200 bg-gray-50 p-3">
-        <span className="rounded bg-gray-200 px-2 py-1 text-xs font-mono font-bold">
+      <div className="flex items-center gap-3 rounded-2xl bg-md-surface-variant p-3">
+        <span className="rounded-lg bg-md-secondary-container px-2 py-1 text-xs font-mono font-bold text-md-on-secondary-container">
           {FILE_ICONS[file.file_type] || "FILE"}
         </span>
         <div>
-          <p className="text-sm font-medium">{file.name}</p>
-          <p className="text-xs text-gray-500">{formatBytes(file.size_bytes)}</p>
+          <p className="text-sm font-medium text-md-fg">{file.name}</p>
+          <p className="text-xs text-md-on-surface-variant">{formatBytes(file.size_bytes)}</p>
         </div>
       </div>
     );
@@ -74,41 +74,41 @@ function SingleFilePreview({ file }: { file: FileInfo }) {
 
   if (isImage) {
     return (
-      <div className="rounded border border-gray-200 bg-gray-50 p-2">
+      <div className="rounded-2xl bg-md-surface-variant p-2">
         <img
           src={file.public_url}
           alt={file.name}
-          className="max-h-80 rounded object-contain"
+          className="max-h-80 rounded-xl object-contain"
           loading="lazy"
         />
-        <p className="mt-1 text-xs text-gray-500">{file.name} · {formatBytes(file.size_bytes)}</p>
+        <p className="mt-1 text-xs text-md-on-surface-variant">{file.name} · {formatBytes(file.size_bytes)}</p>
       </div>
     );
   }
 
   if (isPdf) {
     return (
-      <div className="rounded border border-gray-200">
+      <div className="overflow-hidden rounded-2xl border border-md-outline-variant/20">
         <iframe
           src={file.public_url}
-          className="h-96 w-full rounded"
+          className="h-96 w-full"
           title={file.name}
         />
-        <p className="p-2 text-xs text-gray-500">{file.name} · {formatBytes(file.size_bytes)}</p>
+        <p className="bg-md-surface-variant p-2 text-xs text-md-on-surface-variant">{file.name} · {formatBytes(file.size_bytes)}</p>
       </div>
     );
   }
 
   if (isCode) {
     return (
-      <div className="rounded border border-gray-200">
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-2">
+      <div className="overflow-hidden rounded-2xl border border-md-outline-variant/20">
+        <div className="flex items-center justify-between bg-md-surface-variant px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-mono font-bold">
+            <span className="rounded-lg bg-md-secondary-container px-2 py-0.5 text-xs font-mono font-bold text-md-on-secondary-container">
               {FILE_ICONS[file.file_type]}
             </span>
-            <span className="text-sm font-medium">{file.name}</span>
-            <span className="text-xs text-gray-500">{formatBytes(file.size_bytes)}</span>
+            <span className="text-sm font-medium text-md-fg">{file.name}</span>
+            <span className="text-xs text-md-on-surface-variant">{formatBytes(file.size_bytes)}</span>
           </div>
           <div className="flex gap-2">
             <button
@@ -116,22 +116,22 @@ function SingleFilePreview({ file }: { file: FileInfo }) {
                 await loadSource();
                 setShowSource(!showSource);
               }}
-              className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
+              className="rounded-full bg-md-secondary-container px-2.5 py-1 text-xs text-md-on-secondary-container transition-all duration-200 hover:bg-md-primary/10 active:scale-95"
             >
               {showSource ? "Hide Source" : "View Source"}
             </button>
             <button
               onClick={() => downloadFile(file.public_url!, file.name)}
-              className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
+              className="rounded-full bg-md-secondary-container px-2.5 py-1 text-xs text-md-on-secondary-container transition-all duration-200 hover:bg-md-primary/10 active:scale-95"
             >
               Download
             </button>
           </div>
         </div>
         {showSource && (
-          <div className="max-h-80 overflow-auto bg-gray-900 p-3">
+          <div className="max-h-80 overflow-auto bg-md-fg p-3">
             {loading ? (
-              <p className="text-sm text-gray-400">Loading...</p>
+              <p className="text-sm text-md-outline-variant">Loading...</p>
             ) : (
               <pre className="whitespace-pre-wrap text-xs text-green-400 font-mono">{sourceContent}</pre>
             )}
@@ -143,19 +143,19 @@ function SingleFilePreview({ file }: { file: FileInfo }) {
 
   // Default: download link
   return (
-    <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 p-3">
+    <div className="flex items-center justify-between rounded-2xl bg-md-surface-variant p-3">
       <div className="flex items-center gap-3">
-        <span className="rounded bg-gray-200 px-2 py-1 text-xs font-mono font-bold">
+        <span className="rounded-lg bg-md-secondary-container px-2 py-1 text-xs font-mono font-bold text-md-on-secondary-container">
           {FILE_ICONS[file.file_type] || "FILE"}
         </span>
         <div>
-          <p className="text-sm font-medium">{file.name}</p>
-          <p className="text-xs text-gray-500">{file.mime_type} · {formatBytes(file.size_bytes)}</p>
+          <p className="text-sm font-medium text-md-fg">{file.name}</p>
+          <p className="text-xs text-md-on-surface-variant">{file.mime_type} · {formatBytes(file.size_bytes)}</p>
         </div>
       </div>
       <button
         onClick={() => downloadFile(file.public_url!, file.name)}
-        className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300"
+        className="rounded-full bg-md-secondary-container px-2.5 py-1 text-xs text-md-on-secondary-container transition-all duration-200 hover:bg-md-primary/10 active:scale-95"
       >
         Download
       </button>

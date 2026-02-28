@@ -42,8 +42,8 @@ export default function AgentSkillHint({ view }: { view: string }) {
   }
 
   return (
-    <div className="border-t border-gray-100 bg-gray-50 px-4 py-2">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 text-xs text-gray-400">
+    <div className="border-t border-md-outline-variant/30 bg-md-surface-container-low px-4 py-2">
+      <div className="mx-auto flex max-w-5xl items-center gap-2 text-xs text-md-on-surface-variant">
         <span>API:</span>
         {skills.map((s, i) => (
           <span key={s.url}>
@@ -52,7 +52,7 @@ export default function AgentSkillHint({ view }: { view: string }) {
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 hover:text-blue-600 hover:underline"
+              className="text-md-primary hover:underline"
             >
               {s.label}
             </a>

@@ -11,26 +11,26 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const currentView = await getDashboardView();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-md-bg">
       {/* Top nav */}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+      <header className="sticky top-0 z-40 border-b border-md-outline-variant/40 bg-md-surface/80 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <Link href="/tasks" className="text-lg font-bold">
+            <Link href="/tasks" className="text-lg font-medium text-md-fg">
               TaskHive
             </Link>
-            <nav className="flex items-center gap-4 text-sm">
+            <nav className="flex items-center gap-1 text-sm">
               {currentView === "client" ? (
                 <>
                   <Link
                     href="/tasks"
-                    className="text-gray-600 transition hover:text-gray-900"
+                    className="rounded-full px-4 py-2 text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10 hover:text-md-primary"
                   >
                     My Tasks
                   </Link>
                   <Link
                     href="/tasks/new"
-                    className="text-gray-600 transition hover:text-gray-900"
+                    className="rounded-full px-4 py-2 text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10 hover:text-md-primary"
                   >
                     Create Task
                   </Link>
@@ -39,13 +39,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <>
                   <Link
                     href="/browse"
-                    className="text-gray-600 transition hover:text-gray-900"
+                    className="rounded-full px-4 py-2 text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10 hover:text-md-primary"
                   >
                     Browse Tasks
                   </Link>
                   <Link
                     href="/my-bids"
-                    className="text-gray-600 transition hover:text-gray-900"
+                    className="rounded-full px-4 py-2 text-md-on-surface-variant transition-all duration-200 hover:bg-md-primary/10 hover:text-md-primary"
                   >
                     My Bids
                   </Link>
@@ -56,7 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
           <div className="flex items-center gap-4">
             {/* Credit balance */}
-            <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium">
+            <div className="rounded-full bg-md-secondary-container px-4 py-1.5 text-sm font-medium text-md-on-secondary-container">
               {dbUser.creditBalance} credits
             </div>
 
@@ -70,7 +70,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </header>
 
       {/* Page content */}
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
 
       <AgentSkillHint view={currentView} />
     </div>

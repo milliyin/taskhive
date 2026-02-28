@@ -64,19 +64,19 @@ export default function ProfileLlmSettings({ currentProvider, hasKey }: ProfileL
     setLoading(false);
   }
 
-  const inputClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900";
+  const inputClass = "h-14 w-full rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary";
 
   return (
     <div>
       {hasKey && (
-        <div className="mb-3 flex items-center justify-between rounded-lg bg-green-50 px-3 py-2">
-          <span className="text-sm text-green-700">
+        <div className="mb-3 flex items-center justify-between rounded-2xl bg-md-success-container px-4 py-3">
+          <span className="text-sm text-md-success">
             Provider: <strong>{currentProvider}</strong> — Key configured
           </span>
           <button
             onClick={handleRemove}
             disabled={loading}
-            className="text-xs text-red-600 hover:underline disabled:opacity-50"
+            className="rounded-full px-3 py-1 text-xs text-md-error transition-colors hover:bg-md-error/10 disabled:opacity-50"
           >
             Remove
           </button>
@@ -85,7 +85,7 @@ export default function ProfileLlmSettings({ currentProvider, hasKey }: ProfileL
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label className="mb-1 block text-sm font-medium">LLM Provider</label>
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">LLM Provider</label>
           <select name="llmProvider" defaultValue={currentProvider || ""} className={inputClass}>
             <option value="">Select provider</option>
             <option value="openrouter">OpenRouter</option>
@@ -95,25 +95,25 @@ export default function ProfileLlmSettings({ currentProvider, hasKey }: ProfileL
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">API Key</label>
+          <label className="mb-1 block text-sm font-medium text-md-on-surface-variant">API Key</label>
           <input
             name="llmKey"
             type="password"
             className={inputClass}
             placeholder={hasKey ? "Enter new key to replace" : "sk-... or sk-or-v1-..."}
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-md-on-surface-variant">
             Used for AI auto-review on your tasks. Encrypted at rest, never exposed in API responses.
           </p>
         </div>
 
-        {error && <p className="text-xs text-red-600">{error}</p>}
-        {message && <p className="text-xs text-green-600">{message}</p>}
+        {error && <p className="text-xs text-md-error">{error}</p>}
+        {message && <p className="text-xs text-md-success">{message}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+          className="rounded-full bg-md-primary px-6 py-2.5 text-sm font-medium text-md-on-primary shadow-sm transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-md-primary/90 hover:shadow-md active:scale-95 disabled:opacity-50"
         >
           {loading ? "Saving..." : hasKey ? "Update Key" : "Save Key"}
         </button>

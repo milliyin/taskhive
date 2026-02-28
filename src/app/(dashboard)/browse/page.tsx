@@ -76,9 +76,11 @@ export default function BrowseTasksPage() {
     setOffset(0);
   }, [debouncedSearch, categoryFilter, sort, minBudget, unclaimedOnly]);
 
+  const inputClass = "h-12 rounded-t-xl border-b-2 border-md-border bg-md-surface-variant px-4 text-sm text-md-fg outline-none transition-colors duration-200 placeholder:text-md-on-surface-variant/50 focus:border-md-primary";
+
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">Browse Tasks</h1>
+      <h1 className="mb-6 text-2xl font-medium text-md-fg">Browse Tasks</h1>
 
       {/* Search */}
       <div className="mb-4">
@@ -87,7 +89,7 @@ export default function BrowseTasksPage() {
           placeholder="Search tasks by title or description..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={`w-full ${inputClass}`}
         />
       </div>
 
@@ -96,7 +98,7 @@ export default function BrowseTasksPage() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+          className={`${inputClass} h-10`}
         >
           <option value="">All Categories</option>
           {categories.map((cat) => (
@@ -107,7 +109,7 @@ export default function BrowseTasksPage() {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+          className={`${inputClass} h-10`}
         >
           <option value="newest">Newest First</option>
           <option value="oldest">Oldest First</option>
@@ -120,30 +122,30 @@ export default function BrowseTasksPage() {
           placeholder="Min budget"
           value={minBudget}
           onChange={(e) => setMinBudget(e.target.value)}
-          className="w-28 rounded border border-gray-300 px-3 py-1.5 text-sm"
+          className={`w-28 ${inputClass} h-10`}
         />
 
-        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+        <label className="flex items-center gap-1.5 text-sm text-md-on-surface-variant">
           <input
             type="checkbox"
             checked={unclaimedOnly}
             onChange={(e) => setUnclaimedOnly(e.target.checked)}
-            className="rounded border-gray-300"
+            className="rounded border-md-border accent-md-primary"
           />
           Unclaimed only
         </label>
 
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-md-on-surface-variant">
           {total} open task{total !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* Results */}
       {loading ? (
-        <div className="py-12 text-center text-gray-400">Loading...</div>
+        <div className="py-12 text-center text-md-on-surface-variant">Loading...</div>
       ) : tasks.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-          <p className="text-gray-500">No open tasks found.</p>
+        <div className="rounded-3xl bg-md-surface-container p-8 text-center">
+          <p className="text-md-on-surface-variant">No open tasks found.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -151,26 +153,26 @@ export default function BrowseTasksPage() {
             <Link
               key={task.id}
               href={`/tasks/${task.id}`}
-              className="block rounded-lg border border-gray-200 bg-white p-4 transition hover:border-gray-300 hover:shadow-sm"
+              className="block rounded-2xl bg-md-surface-container p-5 shadow-sm transition-all duration-300 hover:shadow-md"
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-medium">{task.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-sm text-gray-500">
+                  <h3 className="font-medium text-md-fg">{task.title}</h3>
+                  <p className="mt-1 line-clamp-2 text-sm text-md-on-surface-variant">
                     {task.description}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-md-on-surface-variant">
                     {task.category && (
-                      <span className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">
+                      <span className="rounded-full bg-md-secondary-container px-2.5 py-0.5 text-md-on-secondary-container">
                         {task.category.name}
                       </span>
                     )}
                     <span>by {task.poster.name}</span>
                     <span
-                      className={`rounded-full px-2 py-0.5 font-medium ${
+                      className={`rounded-full px-2.5 py-0.5 font-medium ${
                         task.claimsCount === 0
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
+                          ? "bg-md-success-container text-md-success"
+                          : "bg-md-surface-variant text-md-on-surface-variant"
                       }`}
                     >
                       {task.claimsCount === 0
@@ -183,8 +185,8 @@ export default function BrowseTasksPage() {
                   </div>
                 </div>
                 <div className="ml-4 shrink-0 text-right">
-                  <span className="text-lg font-bold">{task.budgetCredits}</span>
-                  <p className="text-xs text-gray-400">credits</p>
+                  <span className="text-lg font-medium text-md-primary">{task.budgetCredits}</span>
+                  <p className="text-xs text-md-on-surface-variant">credits</p>
                 </div>
               </div>
             </Link>
@@ -198,17 +200,17 @@ export default function BrowseTasksPage() {
           <button
             onClick={() => setOffset(Math.max(0, offset - limit))}
             disabled={offset === 0}
-            className="rounded border px-3 py-1 text-sm disabled:opacity-50"
+            className="rounded-full border border-md-border px-4 py-2 text-sm text-md-primary transition-all duration-200 hover:bg-md-primary/5 active:scale-95 disabled:opacity-50"
           >
             Previous
           </button>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-md-on-surface-variant">
             {offset + 1}–{Math.min(offset + limit, total)} of {total}
           </span>
           <button
             onClick={() => setOffset(offset + limit)}
             disabled={offset + limit >= total}
-            className="rounded border px-3 py-1 text-sm disabled:opacity-50"
+            className="rounded-full border border-md-border px-4 py-2 text-sm text-md-primary transition-all duration-200 hover:bg-md-primary/5 active:scale-95 disabled:opacity-50"
           >
             Next
           </button>

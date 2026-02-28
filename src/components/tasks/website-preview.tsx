@@ -109,17 +109,17 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
   const tabFiles = webFiles.all;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-md-outline-variant/20 bg-md-surface-container">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-gray-50 px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-md-outline-variant/20 bg-md-surface-variant px-3 py-2">
         {/* Tabs */}
         <div className="flex gap-1">
           <button
             onClick={() => setActiveTab("preview")}
-            className={`rounded px-3 py-1 text-xs font-medium ${
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${
               activeTab === "preview"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                ? "bg-md-primary text-md-on-primary"
+                : "bg-md-secondary-container text-md-on-secondary-container hover:bg-md-primary/10"
             }`}
           >
             Preview
@@ -128,10 +128,10 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
             <button
               key={f.id}
               onClick={() => setActiveTab(f.name)}
-              className={`rounded px-3 py-1 text-xs font-medium ${
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${
                 activeTab === f.name
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  ? "bg-md-primary text-md-on-primary"
+                  : "bg-md-secondary-container text-md-on-secondary-container hover:bg-md-primary/10"
               }`}
             >
               {f.name}
@@ -142,15 +142,15 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
         {/* Viewport + actions */}
         <div className="flex items-center gap-2">
           {activeTab === "preview" && (
-            <div className="flex rounded border border-gray-300 overflow-hidden">
+            <div className="flex overflow-hidden rounded-full border border-md-border">
               {(["desktop", "tablet", "mobile"] as Viewport[]).map((vp) => (
                 <button
                   key={vp}
                   onClick={() => setViewport(vp)}
-                  className={`px-2 py-1 text-xs ${
+                  className={`px-2.5 py-1 text-xs transition-colors ${
                     viewport === vp
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-100"
+                      ? "bg-md-primary text-md-on-primary"
+                      : "bg-md-surface text-md-on-surface-variant hover:bg-md-primary/10"
                   }`}
                   title={`${vp} (${VIEWPORT_WIDTHS[vp]})`}
                 >
@@ -163,7 +163,7 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
             href={blobUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded bg-gray-200 px-2 py-1 text-xs hover:bg-gray-300 cursor-pointer"
+            className="cursor-pointer rounded-full bg-md-secondary-container px-2.5 py-1 text-xs text-md-on-secondary-container transition-all duration-200 hover:bg-md-primary/10"
           >
             Open in New Tab
           </a>
@@ -172,21 +172,21 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
 
       {/* Content */}
       {loading ? (
-        <div className="flex h-64 items-center justify-center text-sm text-gray-500">
+        <div className="flex h-64 items-center justify-center text-sm text-md-on-surface-variant">
           Loading preview...
         </div>
       ) : activeTab === "preview" ? (
-        <div className="flex justify-center bg-gray-100 p-4">
+        <div className="flex justify-center bg-md-surface-variant/50 p-4">
           <iframe
             srcDoc={htmlContent}
             sandbox="allow-scripts"
-            className="h-[500px] rounded border border-gray-300 bg-white transition-all"
+            className="h-[500px] rounded-xl border border-md-outline-variant/20 bg-white transition-all"
             style={{ width: VIEWPORT_WIDTHS[viewport] }}
             title="Website Preview"
           />
         </div>
       ) : (
-        <div className="max-h-96 overflow-auto bg-gray-900 p-4">
+        <div className="max-h-96 overflow-auto bg-md-fg p-4">
           <pre className="whitespace-pre-wrap text-xs text-green-400 font-mono">
             {fileSources[activeTab] || "// No content loaded"}
           </pre>
@@ -194,11 +194,11 @@ export default function WebsitePreview({ files }: { files: FileInfo[] }) {
       )}
 
       {/* File list footer */}
-      <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
+      <div className="border-t border-md-outline-variant/20 bg-md-surface-variant px-3 py-2">
         <div className="flex flex-wrap gap-3">
           {webFiles.all.map((f) => (
-            <span key={f.id} className="text-xs text-gray-500">
-              <span className="font-mono font-medium text-gray-700">{f.name}</span>
+            <span key={f.id} className="text-xs text-md-on-surface-variant">
+              <span className="font-mono font-medium text-md-fg">{f.name}</span>
               {" "}({formatBytes(f.size_bytes)})
             </span>
           ))}

@@ -3,31 +3,31 @@ interface StatusBadgeProps {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  // Task statuses
-  open: "bg-green-50 text-green-700",
-  claimed: "bg-blue-50 text-blue-700",
-  in_progress: "bg-yellow-50 text-yellow-700",
-  delivered: "bg-purple-50 text-purple-700",
-  completed: "bg-green-50 text-green-700",
-  disputed: "bg-red-50 text-red-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  // Task statuses — MD3 tonal surfaces
+  open: "bg-md-success-container text-md-success",
+  claimed: "bg-md-primary-container text-md-primary",
+  in_progress: "bg-md-tertiary-container text-md-tertiary",
+  delivered: "bg-md-secondary-container text-md-secondary",
+  completed: "bg-md-success-container text-md-success",
+  disputed: "bg-md-error-container text-md-error",
+  cancelled: "bg-md-surface-variant text-md-on-surface-variant",
   // Claim statuses
-  pending: "bg-yellow-50 text-yellow-700",
-  accepted: "bg-green-50 text-green-700",
-  rejected: "bg-red-50 text-red-700",
-  withdrawn: "bg-gray-100 text-gray-500",
+  pending: "bg-md-tertiary-container text-md-tertiary",
+  accepted: "bg-md-success-container text-md-success",
+  rejected: "bg-md-error-container text-md-error",
+  withdrawn: "bg-md-surface-variant text-md-on-surface-variant",
   // Deliverable statuses
-  submitted: "bg-purple-50 text-purple-700",
-  revision_requested: "bg-orange-50 text-orange-700",
+  submitted: "bg-md-secondary-container text-md-secondary",
+  revision_requested: "bg-md-error-container text-md-error",
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
   const label = status.replace(/_/g, " ");
-  const style = STATUS_STYLES[status] || "bg-gray-100 text-gray-600";
+  const style = STATUS_STYLES[status] || "bg-md-surface-variant text-md-on-surface-variant";
 
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${style}`}
+      className={`inline-block rounded-full px-3 py-1 text-xs font-medium capitalize ${style}`}
     >
       {label}
     </span>
