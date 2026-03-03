@@ -18,6 +18,8 @@ function toIncomingMessage(request: Request, body: string): IncomingMessage {
   request.headers.forEach((value, key) => {
     req.headers[key.toLowerCase()] = value;
   });
+  // MCP Streamable HTTP requires Accept to include both types
+  req.headers["accept"] = "application/json, text/event-stream";
   // Push body data and signal end
   req.push(body);
   req.push(null);
@@ -25,14 +27,15 @@ function toIncomingMessage(request: Request, body: string): IncomingMessage {
 }
 
 /**
- * Capture a ServerResponse into a Web Response
+ * Capture a ServerResponse into a Web Response.
+ * Does NOT delegate to the real write/end (the underlying socket is a dummy),
+ * instead captures all chunks and resolves a Web Response promise.
  */
 function captureResponse(): { res: ServerResponse; getResponse: () => Promise<Response> } {
   const socket = new Socket();
   const res = new ServerResponse(new IncomingMessage(socket));
 
   const chunks: Buffer[] = [];
-  let statusCode = 200;
   const headers: Record<string, string> = {};
   let resolvePromise: (r: Response) => void;
 
@@ -40,33 +43,30 @@ function captureResponse(): { res: ServerResponse; getResponse: () => Promise<Re
     resolvePromise = resolve;
   });
 
-  // Intercept writes
-  const origWrite = res.write.bind(res);
-  const origEnd = res.end.bind(res);
-
-  res.write = function (chunk: unknown, ...args: unknown[]) {
+  // Capture writes without delegating to the dummy socket
+  res.write = function (chunk: unknown): boolean {
     if (chunk) {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
     }
-    return origWrite(chunk, ...args as [BufferEncoding, (() => void)?]);
-  };
+    return true;
+  } as typeof res.write;
 
-  res.end = function (chunk?: unknown, ...args: unknown[]) {
-    if (chunk) {
+  res.end = function (chunk?: unknown): ServerResponse {
+    if (chunk && typeof chunk !== "function") {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
     }
-    statusCode = res.statusCode;
-    // Collect headers
+    // Collect headers set by the transport
     const rawHeaders = res.getHeaders();
     for (const [key, val] of Object.entries(rawHeaders)) {
       if (val !== undefined) headers[key] = String(val);
     }
-    resolvePromise!(new Response(Buffer.concat(chunks), {
-      status: statusCode,
+    // Convert Buffer to string — MCP responses are JSON or SSE text
+    resolvePromise!(new Response(Buffer.concat(chunks).toString("utf-8"), {
+      status: res.statusCode,
       headers,
     }));
-    return origEnd(chunk, ...args as [BufferEncoding, (() => void)?]);
-  };
+    return res;
+  } as typeof res.end;
 
   return { res, getResponse: () => responsePromise };
 }
@@ -84,7 +84,17 @@ export async function POST(request: Request) {
   }
 
   const body = await request.text();
-  const parsedBody = JSON.parse(body);
+
+  let parsedBody: unknown;
+  try {
+    parsedBody = JSON.parse(body);
+  } catch {
+    return Response.json({
+      jsonrpc: "2.0",
+      error: { code: -32700, message: "Parse error: invalid JSON" },
+      id: null,
+    }, { status: 400 });
+  }
 
   const server = createMcpServer(token);
   const transport = new StreamableHTTPServerTransport({
