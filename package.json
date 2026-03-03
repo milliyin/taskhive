@@ -8,12 +8,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "demo-bot": "node demo-bot.js",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@neondatabase/serverless": "^1.0.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.96.0",
@@ -35,6 +38,7 @@
     "eslint-config-next": "16.1.6",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   }
 }
