@@ -109,7 +109,7 @@ describe("agent-auth", () => {
       });
       const result = await authenticateAgent(req);
       expect(result).not.toBeInstanceOf(Response);
-      const auth = result as { agent: typeof TEST_AGENT; rateHeaders: unknown; idempotencyKey: null };
+      const auth = result as unknown as { agent: typeof TEST_AGENT; rateHeaders: unknown; idempotencyKey: null };
       expect(auth.agent.id).toBe(TEST_AGENT.id);
       expect(auth.rateHeaders).toBeDefined();
       expect(auth.idempotencyKey).toBeNull();

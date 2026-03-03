@@ -1,6 +1,6 @@
 // Shared test utilities
 
-import { createHash, randomUUID } from "crypto";
+import { createHash } from "crypto";
 
 /**
  * Build a mock Request object for testing route handlers.

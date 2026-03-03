@@ -33,7 +33,7 @@ function captureResponse(): { res: ServerResponse; getResponse: () => Promise<Re
 
   const chunks: Buffer[] = [];
   let statusCode = 200;
-  let headers: Record<string, string> = {};
+  const headers: Record<string, string> = {};
   let resolvePromise: (r: Response) => void;
 
   const responsePromise = new Promise<Response>((resolve) => {
