@@ -1,75 +1,7 @@
 // MCP Streamable HTTP endpoint — stateless, works on Vercel serverless
-// Bridges Next.js App Router (Web API) to MCP SDK (Node.js HTTP primitives)
-import { IncomingMessage, ServerResponse } from "node:http";
-import { Socket } from "node:net";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+// Uses the Web Standard transport directly (no Node.js HTTP shims needed)
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createMcpServer } from "@/lib/mcp-server";
-
-/**
- * Create a minimal IncomingMessage shim from a Web Request
- */
-function toIncomingMessage(request: Request, body: string): IncomingMessage {
-  const url = new URL(request.url);
-  const socket = new Socket();
-  const req = new IncomingMessage(socket);
-  req.method = request.method;
-  req.url = url.pathname + url.search;
-  // Copy headers
-  request.headers.forEach((value, key) => {
-    req.headers[key.toLowerCase()] = value;
-  });
-  // MCP Streamable HTTP requires Accept to include both types
-  req.headers["accept"] = "application/json, text/event-stream";
-  // Push body data and signal end
-  req.push(body);
-  req.push(null);
-  return req;
-}
-
-/**
- * Capture a ServerResponse into a Web Response.
- * Does NOT delegate to the real write/end (the underlying socket is a dummy),
- * instead captures all chunks and resolves a Web Response promise.
- */
-function captureResponse(): { res: ServerResponse; getResponse: () => Promise<Response> } {
-  const socket = new Socket();
-  const res = new ServerResponse(new IncomingMessage(socket));
-
-  const chunks: Buffer[] = [];
-  const headers: Record<string, string> = {};
-  let resolvePromise: (r: Response) => void;
-
-  const responsePromise = new Promise<Response>((resolve) => {
-    resolvePromise = resolve;
-  });
-
-  // Capture writes without delegating to the dummy socket
-  res.write = function (chunk: unknown): boolean {
-    if (chunk) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
-    }
-    return true;
-  } as typeof res.write;
-
-  res.end = function (chunk?: unknown): ServerResponse {
-    if (chunk && typeof chunk !== "function") {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
-    }
-    // Collect headers set by the transport
-    const rawHeaders = res.getHeaders();
-    for (const [key, val] of Object.entries(rawHeaders)) {
-      if (val !== undefined) headers[key] = String(val);
-    }
-    // Convert Buffer to string — MCP responses are JSON or SSE text
-    resolvePromise!(new Response(Buffer.concat(chunks).toString("utf-8"), {
-      status: res.statusCode,
-      headers,
-    }));
-    return res;
-  } as typeof res.end;
-
-  return { res, getResponse: () => responsePromise };
-}
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization") || "";
@@ -83,32 +15,16 @@ export async function POST(request: Request) {
     }, { status: 401 });
   }
 
-  const body = await request.text();
-
-  let parsedBody: unknown;
-  try {
-    parsedBody = JSON.parse(body);
-  } catch {
-    return Response.json({
-      jsonrpc: "2.0",
-      error: { code: -32700, message: "Parse error: invalid JSON" },
-      id: null,
-    }, { status: 400 });
-  }
-
   const server = createMcpServer(token);
-  const transport = new StreamableHTTPServerTransport({
+  const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined, // stateless mode
+    enableJsonResponse: true,      // return JSON instead of SSE (serverless-friendly)
   });
 
   await server.connect(transport);
 
-  const req = toIncomingMessage(request, body);
-  const { res, getResponse } = captureResponse();
-
-  await transport.handleRequest(req, res, parsedBody);
-
-  return getResponse();
+  // Pass the original Web Request directly — no shimming needed
+  return transport.handleRequest(request);
 }
 
 // Stateless mode — no SSE sessions
