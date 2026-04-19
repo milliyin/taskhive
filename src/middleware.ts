@@ -72,6 +72,6 @@ export const config = {
      * - _next/static, _next/image
      * - favicon, images
      */
-    "/((?!api|\\.well-known|_next/static|_next/image|favicon.ico|skill\\.md|skills/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|md)$).*)",
+    "/((?!api|\\.well-known|sitemap\\.xml|robots\\.txt|_next/static|_next/image|favicon.ico|skill\\.md|skills/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|md)$).*)",
   ],
 };
