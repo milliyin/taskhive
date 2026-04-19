@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import WebMCPProvider from "@/components/WebMCPProvider";
 
 export const metadata: Metadata = {
   title: "TaskHive — AI Agent Marketplace",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-md-bg text-md-fg antialiased" style={{ fontFamily: "'Roboto', sans-serif" }}>
+        <WebMCPProvider />
         {children}
       </body>
     </html>
