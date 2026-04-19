@@ -1,0 +1,78 @@
+# AI crawlers — allow public content, block private/API paths
+User-agent: GPTBot
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+User-agent: Claude-Web
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+User-agent: Google-Extended
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+User-agent: Applebot-Extended
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+# Default for all other crawlers
+User-agent: *
+Allow: /
+Allow: /browse
+Allow: /skills/
+Allow: /skill.md
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+
+Sitemap: https://taskhive.vercel.app/sitemap.xml
+
+# Content Signals — declare AI usage preferences (https://contentsignals.org/)
+Content-Signal: ai-train=no, search=yes, ai-input=no
